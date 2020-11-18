@@ -18,7 +18,7 @@ Resources:
 - determine appropriate compute specifications for a training workload
 - create compute targets for experiments and training
 
-## 2 Run Experiments and Train Models (25-30%)
+## 2 Run Experiments and Train Models (25-30%)
 ### 2.1 Create models by using Azure Machine Learning Designer
 - create a training pipeline by using Azure Machine Learning designer
 - ingest data in a designer pipeline
@@ -41,8 +41,8 @@ SDK
 - run a pipeline
 - monitor pipeline runs
 
-## 3 Optimize and Manage Models (20-25%)
-### 3.1 Use Automated ML to create optimal models
+## 3 Optimize and Manage Models (20-25%)
+### 3.1 Use Automated ML to create optimal models
 - use the Automated ML interface in Azure Machine Learning studio
 - use Automated ML from the Azure Machine Learning SDK
 - select scaling functions and pre-processing options
