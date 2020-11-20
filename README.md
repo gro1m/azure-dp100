@@ -4,6 +4,7 @@ Resources:
 - https://github.com/MicrosoftLearning/DP100/tree/master/labdocs
 - https://docs.microsoft.com/en-us/learn/certifications/exams/dp-100
 - https://www.itexams.com/exam/DP-100
+- https://docs.microsoft.com/en-us/azure/machine-learning/
 
 ## 1 Set up an Azure Machine Learning Workspace (30-35%)
 ### 1.1 Create an Azure Machine Learning workspace
