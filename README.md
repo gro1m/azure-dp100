@@ -31,7 +31,7 @@ Use the Azure Command Line Interface (CLI) with the Azure Machine Learning CLI e
     az ml workspace create -w 'aml-workspace' -g 'aml-resources'
 ```
 
-Create an Azure Resource Manager template. For more information the template format for an Azure Machine Learning workspace, see the Azure Machine Learning documentation.
+Create an Azure Resource Manager template, see the[Azure Machine Learning documentation](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-create-workspace-template?tabs=azcli).
 
 - configure workspace settings
 - manage a workspace by using Azure Machine Learning studio
