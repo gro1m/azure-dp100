@@ -213,15 +213,118 @@ With the data flow steps defined, you're now ready to run the training pipeline 
 #### 1.2.4 use custom code modules in designer
 
 ### 2.2 Run training scripts in an Azure Machine Learning workspace
-- create and run an experiment by using the Azure Machine Learning SDK
-- consume data from a data store in an experiment by using the Azure Machine Learning
+In Azure Machine Learning, an experiment is a named process, usually the running of a script or a pipeline, that can generate metrics and outputs and be tracked in the Azure Machine Learning workspace. An experiment can be run multiple times, with different data, code, or settings; and Azure Machine Learning tracks each run, enabling you to view run history and compare results for each run.
+
+**The Experiment Run Context**
+When you submit an experiment, you use its run context to initialize and end the experiment run that is tracked in Azure Machine Learning, as shown in the following code sample:
+```python
+from azureml.core import Experiment
+
+# create an experiment variable
+experiment = Experiment(workspace = ws, name = "my-experiment")
+
+# start the experiment
+run = experiment.start_logging()
+
+# experiment code goes here
+
+# end the experiment
+run.complete()
+```
+
+After the experiment run has completed, you can view the details of the run in the Experiments tab in Azure Machine Learning studio.
+#### 2.2.1 create and run an experiment by using the Azure Machine Learning SDK
+#### 2.2.2 consume data from a data store in an experiment by using the Azure Machine Learning
 SDK
-- consume data from a dataset in an experiment by using the Azure Machine Learning
+#### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning
 SDK
-- choose an estimator for a training experiment
+#### 2.2.4 choose an estimator for a training experiment
 ### 2.3 Generate metrics from an experiment run
-- log metrics from an experiment run
+#### 2.3.1 log metrics from an experiment run
+Every experiment generates log files that include the messages that would be written to the terminal during interactive execution. This enables you to use simple print statements to write messages to the log. However, if you want to record named metrics for comparison across runs, you can do so by using the Run object; which provides a range of logging functions specifically for this purpose. These include:
+
+* **log**: Record a single named value.
+* **log_list**: Record a named list of values.
+* **log_row**: Record a row with multiple columns.
+* **log_table**: Record a dictionary as a table.
+* **log_image**: Record an image file or a plot.
+
+More Information: For more information about logging metrics during experiment runs, see https://docs.microsoft.com/en-us/azure/machine-learning/how-to-track-experiments.
+
+For example, following code records the number of observations (records) in a CSV file:
+```python
+from azureml.core import Experiment
+import pandas as pd
+
+# Create an Azure ML experiment in your workspace
+experiment = Experiment(workspace = ws, name = 'my-experiment')
+
+# Start logging data from the experiment
+run = experiment.start_logging()
+
+# load the dataset and count the rows
+data = pd.read_csv('data.csv')
+row_count = (len(data))
+
+# Log the row count
+run.log('observations', row_count)
+
+# Complete the experiment
+run.complete()
+```
+
+Logging with ML Flow
+ML Flow is an Open Source library for managing machine learning experiments, and includes a tracking component for logging. If your organization already includes ML Flow, you can continue to use it to track metrics in Azure Machine Learning.
+
+More Information: For more information about using ML Flow with Azure Machine Learning, see Track metrics and deploy models with MLflow and Azure Machine Learning in the documentation.
+
+Retrieving and Viewing Logged Metrics
+You can view the metrics logged by an experiment run in Azure Machine Learning studio or by using the RunDetails widget in a notebook, as shown here:
+```python
+from azureml.widgets import RunDetails
+
+RunDetails(run).show()
+```
+
+You can also retrieve the metrics using the Run object's get_metrics method, which returns a JSON representation of the metrics, as shown here:
+```python
+import json
+
+# Get logged metrics
+metrics = run.get_metrics()
+print(json.dumps(metrics, indent=2))
+``` 
+
+The previous code produces output similar to this:
+```json
+{
+  "observations": 15000
+}
+```
 - retrieve and view experiment outputs
+In addition to logging metrics, an experiment can generate output files. Often these are trained machine learning models, but you can save any sort of file and make it available as an output of your experiment run. The output files of an experiment are saved in its outputs folder.
+
+The technique you use to add files to the outputs of an experiment depend on how your running the experiment. The examples shown so far control the experiment lifecycle inline in your code, and when taking this approach you can upload local files to the run's outputs folder by using the Run object's upload_file method in your experiment code as shown here:
+```python
+run.upload_file(name='outputs/sample.csv', path_or_stream='./sample.csv')
+``` 
+
+When running an experiment in a remote compute context (which we'll discuss later in this course), any files written to the outputs folder in the compute context are automatically uploaded to the run's outputs folder when the run completes.
+
+Whichever approach you use to run your experiment, you can retrieve a list of output files from the Run object like this:
+```python
+import json
+
+files = run.get_file_names()
+print(json.dumps(files, indent=2))
+```
+
+The previous code produces output similar to this:
+```json
+[
+  "outputs/sample.csv"
+]
+```
 - use logs to troubleshoot experiment run errors
 ### 2.4 Automate the model training process
 - create a pipeline by using the SDK
