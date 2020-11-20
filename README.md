@@ -213,6 +213,7 @@ With the data flow steps defined, you're now ready to run the training pipeline 
 #### 1.2.4 use custom code modules in designer
 
 ### 2.2 Run training scripts in an Azure Machine Learning workspace
+#### 2.2.1 create and run an experiment by using the Azure Machine Learning SDK
 In Azure Machine Learning, an experiment is a named process, usually the running of a script or a pipeline, that can generate metrics and outputs and be tracked in the Azure Machine Learning workspace. An experiment can be run multiple times, with different data, code, or settings; and Azure Machine Learning tracks each run, enabling you to view run history and compare results for each run.
 
 **The Experiment Run Context**
@@ -231,9 +232,8 @@ run = experiment.start_logging()
 # end the experiment
 run.complete()
 ```
-
 After the experiment run has completed, you can view the details of the run in the Experiments tab in Azure Machine Learning studio.
-#### 2.2.1 create and run an experiment by using the Azure Machine Learning SDK
+
 #### 2.2.2 consume data from a data store in an experiment by using the Azure Machine Learning SDK
 #### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning SDK
 #### 2.2.4 choose an estimator for a training experiment
@@ -242,10 +242,41 @@ After the experiment run has completed, you can view the details of the run in t
 Every experiment generates log files that include the messages that would be written to the terminal during interactive execution. This enables you to use simple print statements to write messages to the log. However, if you want to record named metrics for comparison across runs, you can do so by using the Run object; which provides a range of logging functions specifically for this purpose. These include:
 
 * **log**: Record a single named value.
+Example experiment code:
+```python
+import pandas
+data = pd.read_csv('data/diabetes.csv')
+row_count = len(data)
+run.log('observations', row_count)
+```
 * **log_list**: Record a named list of values.
+```python
+run.log_list('pregnancy categories', data.Pregnancies.unique())
+```  
 * **log_row**: Record a row with multiple columns.
+```python
+# Log summary statistics for numeric columns
+med_columns = ['PlasmaGlucose', 'DiastolicBloodPressure', 'TricepsThickness', 'SerumInsulin', 'BMI']
+summary_stats = data[med_columns].describe().to_dict()
+for col in summary_stats:
+    keys = list(summary_stats[col].keys())
+    values = list(summary_stats[col].values())
+    for index in range(len(keys)):
+        run.log_row(col, stat=keys[index], value = values[index])
+```
 * **log_table**: Record a dictionary as a table.
 * **log_image**: Record an image file or a plot.
+```python
+diabetic_counts = data['Diabetic'].value_counts()
+fig = plt.figure(figsize=(6,6))
+ax = fig.gca()    
+diabetic_counts.plot.bar(ax = ax) 
+ax.set_title('Patients with Diabetes') 
+ax.set_xlabel('Diagnosis') 
+ax.set_ylabel('Patients')
+plt.show()
+run.log_image(name = 'label distribution', plot = fig)
+```
 
 More Information: For more information about logging metrics during experiment runs, see https://docs.microsoft.com/en-us/azure/machine-learning/how-to-track-experiments.
 
@@ -271,7 +302,7 @@ run.log('observations', row_count)
 run.complete()
 ```
 
-Logging with ML Flow
+*Logging with ML Flow*
 ML Flow is an Open Source library for managing machine learning experiments, and includes a tracking component for logging. If your organization already includes ML Flow, you can continue to use it to track metrics in Azure Machine Learning.
 
 More Information: For more information about using ML Flow with Azure Machine Learning, see Track metrics and deploy models with MLflow and Azure Machine Learning in the documentation.
