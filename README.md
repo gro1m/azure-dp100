@@ -7,6 +7,25 @@ Resources:
 
 ## 1 Set up an Azure Machine Learning Workspace (30-35%)
 ### 1.1 Create an Azure Machine Learning workspace
+A workspace defines the boundary for a set of related machine learning assets. You can use workspaces to group machine learning assets based on projects, deployment environments (for example, test and production), teams, or some other organizing principle. The assets in a workspace include:
+
+* Compute targets for development, training, and deployment.
+* Data for experimentation and model training.
+* Notebooks containing shared code and documentation.
+* Experiments, including run history with logged metrics and outputs.
+* Pipelines that define orchestrated multi-step processes.
+* Models that you have trained.
+* Workspaces as Azure Resources
+
+Workspaces are Azure resources, and as such they are defined within a resource group in an Azure subscription, along with other related Azure resources that are required to support the workspace.
+
+
+The Azure resources created alongside a workspace include:
+* A storage account - used to store files used by the workspace as well as data for experiments and model training.
+* An Application Insights instance, used to monitor predictive services in the workspace.
+* An Azure Key Vault instance, used to manage secrets such as authentication keys and credentials used by the workspace.
+* A container registry, created as-needed to manage containers for deployed models.
+
 #### 1.1.1 create an Azure Machine Learning workspace 
 Reference: https://docs.microsoft.com/en-us/learn/modules/intro-to-azure-machine-learning-service/2-azure-ml-workspace
 
