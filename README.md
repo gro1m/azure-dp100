@@ -549,6 +549,26 @@ The previous code produces output similar to this:
 #### 3.3.2 generate feature importance data
 ### 3.4 Manage models
 #### 3.4.1 register a trained model
+```python
+
+from azureml.core import Model
+
+# Register the model
+run.register_model(model_path='outputs/diabetes_model.pkl', model_name='diabetes_model',
+                   tags={'Training context':'Parameterized SKLearn Estimator'},
+                   properties={'AUC': run.get_metrics()['AUC'], 'Accuracy': run.get_metrics()['Accuracy']})
+
+# List registered models
+for model in Model.list(ws):
+    print(model.name, 'version:', model.version)
+    for tag_name in model.tags:
+        tag = model.tags[tag_name]
+        print ('\t',tag_name, ':', tag)
+    for prop_name in model.properties:
+        prop = model.properties[prop_name]
+        print ('\t',prop_name, ':', prop)
+    print('\n')
+```
 #### 3.4.2 monitor model history
 #### 3.4.3 monitor data drift 
 
