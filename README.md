@@ -7,7 +7,32 @@ Resources:
 
 ## 1 Set up an Azure Machine Learning Workspace (30-35%)
 ### 1.1 Create an Azure Machine Learning workspace
-- create an Azure Machine Learning workspace
+#### 1.1.1 create an Azure Machine Learning workspace 
+Reference: https://docs.microsoft.com/en-us/learn/modules/intro-to-azure-machine-learning-service/2-azure-ml-workspace
+
+You can create a workspace in any of the following ways:
+
+* In the Microsoft Azure portal, create a new Machine Learning resource, specifying the subscription, resource group and workspace name.
+* Use the Azure Machine Learning Python SDK to run code that creates a workspace. For example, the following code creates a workspace named aml-workspace (assuming the Azure ML SDK for Python is installed and a valid subscription ID is specified):
+
+```python
+    from azureml.core import Workspace
+    
+    ws = Workspace.create(name='aml-workspace', 
+                      subscription_id='123456-abc-123...',
+                      resource_group='aml-resources',
+                      create_resource_group=True,
+                      location='eastus'
+                     )
+ ```
+
+Use the Azure Command Line Interface (CLI) with the Azure Machine Learning CLI extension. For example, you could use the following command (which assumes a resource group named aml-resources has already been created):
+```bash
+    az ml workspace create -w 'aml-workspace' -g 'aml-resources'
+```
+
+Create an Azure Resource Manager template. For more information the template format for an Azure Machine Learning workspace, see the Azure Machine Learning documentation.
+
 - configure workspace settings
 - manage a workspace by using Azure Machine Learning studio
 ### 1.2 Manage data objects in an Azure Machine Learning workspace
