@@ -110,6 +110,45 @@ To use Azure Machine Learning studio, use a a web browser to navigate to https:/
 - determine appropriate compute specifications for a training workload
 - create compute targets for experiments and training
 
+### --- Introduction Azure ML SDK --- ###
+Azure Machine Learning (Azure ML) is a cloud-based service for creating and managing machine learning solutions. It's designed to help data scientists leverage their existing data processing and model development skills and frameworks, and help them scale their workloads to the cloud. The Azure ML SDK for Python provides classes you can use to work with Azure ML in your Azure subscription.
+
+Check the Azure ML SDK Version
+Let's start by importing the azureml-core package and checking the version of the SDK that is installed.
+
+```python
+import azureml.core
+print("Ready to use Azure ML", azureml.core.VERSION)
+```
+View Azure ML resources
+First connect to workspace, like so:
+```python
+from azureml.core import Workspace
+
+ws = Workspace.from_config()
+print(ws.name, "loaded")
+```
+and then view resources:
+```python
+from azureml.core import ComputeTarget, Datastore, Dataset
+
+print("Compute Targets:")
+for compute_name in ws.compute_targets:
+    compute = ws.compute_targets[compute_name]
+    print("\t", compute.name, ':', compute.type)
+    
+print("Datastores:")
+for datastore_name in ws.datastores:
+    datastore = Datastore.get(ws, datastore_name)
+    print("\t", datastore.name, ':', datastore.datastore_type)
+    
+print("Datasets:")
+for dataset_name in list(ws.datasets.keys()):
+    dataset = Dataset.get_by_name(ws, dataset_name)
+    print("\t", dataset.name)
+```
+
+
 ## 2 Run Experiments and Train Models (25-30%)
 ### 2.1 Create models by using Azure Machine Learning Designer
 - create a training pipeline by using Azure Machine Learning designer
