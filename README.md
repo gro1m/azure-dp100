@@ -197,7 +197,7 @@ With the data flow steps defined, you're now ready to run the training pipeline 
 
 1. Verify that your pipeline looks similar to the following:
 
-    ![Visual Training Pipeline](images/visual-training.jpg)
+    ![Visual Training Pipeline](visual-training.png)
 
 2. At the top right, click **Submit**. Then when prompted, create a new *experiment* named **visual-training**, and run it.  This will initialize the compute cluster and then run the pipeline, which may take 10 minutes or longer. You  can see the status of the pipeline run above the top right of the design canvas.
 
