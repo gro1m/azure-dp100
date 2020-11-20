@@ -87,6 +87,18 @@ ws = Workspace.get(name='aml-workspace',
 Whichever technique you use, if there is no current active session with your Azure subscription, you will be prompted to authenticate.
 
 #### 1.1.3 manage a workspace by using Azure Machine Learning studio
+You can manage the assets in your Azure Machine Learning workspace in the Azure portal, but as this is a general interface for managing all kinds of resources in Azure, data scientists and other users involved in machine learning operations may prefer to use a more focused, dedicated interface.
+
+
+Azure Machine Learning studio is a web-based tool for managing an Azure Machine Learning workspace. It enables you to create, manage, and view all of the assets in your workspace and provides the following graphical tools:
+
+Designer: A drag and drop interface for "no code" machine learning model development.
+Automated Machine Learning: A wizard interface that enables you to train a model using a combination of algorithms and data preprocessing techniques to find the best model for your data.
+ Note
+
+A previously released tool named Azure Machine Learning Studio provided a free service for drag and drop machine learning model development. The studio interface for the Azure Machine Learning service includes this capability in the designer tool, as well as other workspace asset management capabilities.
+
+To use Azure Machine Learning studio, use a a web browser to navigate to https://ml.azure.com and sign in using credentials associated with your Azure subscription. You can then select the subscription and workspace you want to manage.
 
 ### 1.2 Manage data objects in an Azure Machine Learning workspace
 - register and maintain data stores
