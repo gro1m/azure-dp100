@@ -234,6 +234,78 @@ run.complete()
 ```
 After the experiment run has completed, you can view the details of the run in the Experiments tab in Azure Machine Learning studio.
 
+**Via Script**
+```python
+%%writefile $folder_name/diabetes_experiment.py
+from azureml.core import Run
+import pandas as pd
+import os
+
+# Get the experiment run context
+run = Run.get_context()
+
+# load the diabetes dataset
+data = pd.read_csv('diabetes.csv')
+
+# Count the rows and log the result
+row_count = (len(data))
+run.log('observations', row_count)
+print('Analyzing {} rows of data'.format(row_count))
+
+# Count and log the label counts
+diabetic_counts = data['Diabetic'].value_counts()
+print(diabetic_counts)
+for k, v in diabetic_counts.items():
+    run.log('Label:' + str(k), v)
+      
+# Save a sample of the data in the outputs folder (which gets uploaded automatically)
+os.makedirs('outputs', exist_ok=True)
+data.sample(100).to_csv("outputs/sample.csv", index=False, header=True)
+
+# Complete the run
+run.complete()
+``` 
+
+This code is a simplified version of the inline code used before. However, note the following:
+
+It uses the Run.get_context() method to retrieve the experiment run context when the script is run.
+It loads the diabetes data from the folder where the script is located.
+It creates a folder named outputs and writes the sample file to it - this folder is automatically uploaded to the experiment run
+Now you're almost ready to run the experiment. To run the script, you must create a ScriptRunConfig that identifies the Python script file to be run in the experiment, and then run an experiment based on it.
+
+Note: The ScriptRunConfig also determines the compute target and Python environment. If you don't specify these, a default environment is created automatically on the local compute where the code is being run (in this case, where this notebook is being run).
+
+The following cell configures and submits the script-based experiment:
+```python
+import os
+import sys
+from azureml.core import Experiment, ScriptRunConfig
+from azureml.widgets import RunDetails
+
+
+# Create a script config
+script_config = ScriptRunConfig(source_directory=experiment_folder, 
+                      script='diabetes_experiment.py') 
+
+# submit the experiment
+experiment = Experiment(workspace=ws, name='diabetes-experiment')
+run = experiment.submit(config=script_config)
+RunDetails(run).show()
+run.wait_for_completion()
+```
+
+**View experiment run history**
+```python
+from azureml.core import Experiment, Run
+
+diabetes_experiment = ws.experiments['diabetes-experiment']
+for logged_run in diabetes_experiment.get_runs():
+    print('Run ID:', logged_run.id)
+    metrics = logged_run.get_metrics()
+    for key in metrics.keys():
+        print('-', key, metrics.get(key))
+```
+
 #### 2.2.2 consume data from a data store in an experiment by using the Azure Machine Learning SDK
 #### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning SDK
 #### 2.2.4 choose an estimator for a training experiment
@@ -302,12 +374,12 @@ run.log('observations', row_count)
 run.complete()
 ```
 
-*Logging with ML Flow*
+**Logging with ML Flow**
 ML Flow is an Open Source library for managing machine learning experiments, and includes a tracking component for logging. If your organization already includes ML Flow, you can continue to use it to track metrics in Azure Machine Learning.
 
 More Information: For more information about using ML Flow with Azure Machine Learning, see Track metrics and deploy models with MLflow and Azure Machine Learning in the documentation.
 
-Retrieving and Viewing Logged Metrics
+**Retrieving and Viewing Logged Metrics**
 You can view the metrics logged by an experiment run in Azure Machine Learning studio or by using the RunDetails widget in a notebook, as shown here:
 ```python
 from azureml.widgets import RunDetails
