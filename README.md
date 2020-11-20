@@ -89,6 +89,7 @@ Whichever technique you use, if there is no current active session with your Azu
 #### 1.1.3 manage a workspace by using Azure Machine Learning studio
 You can manage the assets in your Azure Machine Learning workspace in the Azure portal, but as this is a general interface for managing all kinds of resources in Azure, data scientists and other users involved in machine learning operations may prefer to use a more focused, dedicated interface.
 
+![](aml_studio.png)
 
 Azure Machine Learning studio is a web-based tool for managing an Azure Machine Learning workspace. It enables you to create, manage, and view all of the assets in your workspace and provides the following graphical tools:
 
