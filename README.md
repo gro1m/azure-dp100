@@ -191,10 +191,27 @@ for dataset_name in list(ws.datasets.keys()):
 
 ## 2 Run Experiments and Train Models (25-30%)
 ### 2.1 Create models by using Azure Machine Learning Designer
-- create a training pipeline by using Azure Machine Learning designer
-- ingest data in a designer pipeline
-- use designer modules to define a pipeline data flow
-- use custom code modules in designer
+#### 2.1.1 create a training pipeline by using Azure Machine Learning designer
+
+With the data flow steps defined, you're now ready to run the training pipeline and train the model.
+
+1. Verify that your pipeline looks similar to the following:
+
+    ![Visual Training Pipeline](images/visual-training.jpg)
+
+2. At the top right, click **Submit**. Then when prompted, create a new *experiment* named **visual-training**, and run it.  This will initialize the compute cluster and then run the pipeline, which may take 10 minutes or longer. You  can see the status of the pipeline run above the top right of the design canvas.
+
+    **Tip**: While it's running, you can view the pipeline and experiment that have been created in the **Pipelines** and **Experiments** pages. Switch back to the **Visual Diabetes Training** pipeline on the **Designer** page when you're done.
+
+3. After the **Normalize Data** module has completed, select it, and in the **Settings** pane, on the **Outputs + logs** tab, under **Data outputs** in the **Transformed dataset** section, click the **Visualize** icon, and note that you can view statistics and distribution visualizations for the transformed columns.
+4. Close the **Normalize Data** visualizations and wait for the rest of the modules to complete. Then visualize the output of the **Evaluate Model** module to see the performance metrics for the model.
+
+    **Note**: The performance of this model isn't all that great, partly because we performed only minimal feature engineering and pre-processing. You could try some different classification algorithms and compare the results (you can connect the outputs of the **Split Data** module to multiple **Train Model** and **Score Model** modules, and you can connect a second scored model to the **Evaluate Model** module to see a side-by-side comparison). The point of the exercise is simply to introduce you to the Designer interface, not to train a perfect model!
+
+#### 1.2.2 ingest data in a designer pipeline
+#### 1.2.3 use designer modules to define a pipeline data flow
+#### 1.2.4 use custom code modules in designer
+
 ### 2.2 Run training scripts in an Azure Machine Learning workspace
 - create and run an experiment by using the Azure Machine Learning SDK
 - consume data from a data store in an experiment by using the Azure Machine Learning
