@@ -52,8 +52,42 @@ Use the Azure Command Line Interface (CLI) with the Azure Machine Learning CLI e
 
 Create an Azure Resource Manager template, see the[Azure Machine Learning documentation](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-create-workspace-template?tabs=azcli).
 
-- configure workspace settings
-- manage a workspace by using Azure Machine Learning studio
+#### 1.1.2 configure workspace settings
+fter installing the SDK package in your Python environment, you can write code to connect to your workspace and perform machine learning operations. The easiest way to connect to a workspace is to use a workspace configuration file, which includes the Azure subscription, resource group, and workspace details as shown here:
+
+```json
+{
+    "subscription_id": "1234567-abcde-890-fgh...",
+    "resource_group": "aml-resources",
+    "workspace_name": "aml-workspace"
+}
+```
+
+Tip: You can download a configuration file for a workspace from the Overview page of its blade in the Azure portal or from Azure Machine Learning studio.
+
+To connect to the workspace using the configuration file, you can use the from_config method of the Workspace class in the SDK, as shown here:
+
+```python
+from azureml.core import Workspace
+
+ws = Workspace.from_config()
+```
+
+By default, the from_config method looks for a file named config.json in the folder containing the Python code file, but you can specify another path if necessary.
+
+As an alternative to using a configuration file, you can use the get method of the Workspace class with explicitly specified subscription, resource group, and workspace details as shown here - though the configuration file technique is generally preferred due to its greater flexibility when using multiple scripts:
+
+```python
+from azureml.core import Workspace
+
+ws = Workspace.get(name='aml-workspace',
+                   subscription_id='1234567-abcde-890-fgh...',
+                   resource_group='aml-resources')
+```
+Whichever technique you use, if there is no current active session with your Azure subscription, you will be prompted to authenticate.
+
+#### 1.1.3 manage a workspace by using Azure Machine Learning studio
+
 ### 1.2 Manage data objects in an Azure Machine Learning workspace
 - register and maintain data stores
 - create and manage datasets
