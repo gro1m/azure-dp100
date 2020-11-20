@@ -109,9 +109,24 @@ To use Azure Machine Learning studio, use a a web browser to navigate to https:/
 - register and maintain data stores
 - create and manage datasets
 ### 1.3 Manage experiment compute contexts
-- create a compute instance
-- determine appropriate compute specifications for a training workload
-- create compute targets for experiments and training
+#### 1.3.1 create a compute instance
+1. In the Azure Machine Learning studio web interface for your workspace, view the **Compute** page. This is where you'll manage all the compute targets for your data science activities.
+2. On the **Compute Instances** tab, add a new compute instance with the following settings. You'll use this as a workstation from which to test your model:
+    - **Compute name**: *enter a unique name*
+    - **Virtual Machine type**: CPU
+    - **Virtual Machine size**: Standard_DS1_v2
+3. While the compute instance is being created, switch to the **Compute Clusters** tab, and add a new compute cluster with the following settings. You'll use this to train a machine learning model:
+    - **Compute name**: *enter a unique name*
+    - **Virtual Machine type**: CPU
+    - **Virtual Machine priority**: Dedicated
+    - **Virtual Machine size**: Standard_DS2_v2
+    - **Minimum number of nodes**: 0
+    - **Maximum number of nodes**: 2
+    - **Idle seconds before scale down**: 120
+4. Note the **Inference Clusters** tab. This is where you can create and manage compute targets on which to deploy your trained models as web services for client applications to consume.
+5. Note the **Attached Compute** tab. This is where you could attach a virtual machine or Databricks cluster that exists outside of your workspace.
+#### 1.3.2 determine appropriate compute specifications for a training workload
+#### 1.3.3 create compute targets for experiments and training
 
 ### --- Introduction Azure ML SDK --- ###
 Azure Machine Learning (Azure ML) is a cloud-based service for creating and managing machine learning solutions. It's designed to help data scientists leverage their existing data processing and model development skills and frameworks, and help them scale their workloads to the cloud. The Azure ML SDK for Python provides classes you can use to work with Azure ML in your Azure subscription.
