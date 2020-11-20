@@ -234,10 +234,8 @@ run.complete()
 
 After the experiment run has completed, you can view the details of the run in the Experiments tab in Azure Machine Learning studio.
 #### 2.2.1 create and run an experiment by using the Azure Machine Learning SDK
-#### 2.2.2 consume data from a data store in an experiment by using the Azure Machine Learning
-SDK
-#### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning
-SDK
+#### 2.2.2 consume data from a data store in an experiment by using the Azure Machine Learning SDK
+#### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning SDK
 #### 2.2.4 choose an estimator for a training experiment
 ### 2.3 Generate metrics from an experiment run
 #### 2.3.1 log metrics from an experiment run
@@ -301,7 +299,7 @@ The previous code produces output similar to this:
   "observations": 15000
 }
 ```
-- retrieve and view experiment outputs
+#### 2.3.2 retrieve and view experiment outputs
 In addition to logging metrics, an experiment can generate output files. Often these are trained machine learning models, but you can save any sort of file and make it available as an output of your experiment run. The output files of an experiment are saved in its outputs folder.
 
 The technique you use to add files to the outputs of an experiment depend on how your running the experiment. The examples shown so far control the experiment lifecycle inline in your code, and when taking this approach you can upload local files to the run's outputs folder by using the Run object's upload_file method in your experiment code as shown here:
@@ -325,48 +323,48 @@ The previous code produces output similar to this:
   "outputs/sample.csv"
 ]
 ```
-- use logs to troubleshoot experiment run errors
+#### 2.3.3 use logs to troubleshoot experiment run errors
 ### 2.4 Automate the model training process
-- create a pipeline by using the SDK
-- pass data between steps in a pipeline
-- run a pipeline
-- monitor pipeline runs
+#### 2.4.1 create a pipeline by using the SDK
+#### 2.4.2 pass data between steps in a pipeline
+#### 2.4.3 run a pipeline
+#### 2.4.4 monitor pipeline runs
 
 ## 3 Optimize and Manage Models (20-25%)
 ### 3.1 Use Automated ML to create optimal models
-- use the Automated ML interface in Azure Machine Learning studio
-- use Automated ML from the Azure Machine Learning SDK
-- select scaling functions and pre-processing options
-- determine algorithms to be searched
-- define a primary metric
-- get data for an Automated ML run
-- retrieve the best model
+#### 3.1.1 use the Automated ML interface in Azure Machine Learning studio
+#### 3.1.2 use Automated ML from the Azure Machine Learning SDK
+#### 3.1.3 select scaling functions and pre-processing options
+#### 3.1.4 determine algorithms to be searched
+#### 3.1.5 define a primary metric
+#### 3.1.6 get data for an Automated ML run
+#### 3.1.7 retrieve the best model
 ### 3.2 Use Hyperdrive to tune hyperparameters
-- select a sampling method
-- define the search space
-- define the primary metric
-- define early termination options
-- find the model that has optimal hyperparameter values
+#### 3.2.1 select a sampling method
+#### 3.2.2 define the search space
+#### 3.2.3 define the primary metric
+#### 3.2.4 define early termination options
+#### 3.2.5 find the model that has optimal hyperparameter values
 ### 3.3 Use model explainers to interpret models
-- select a model interpreter
-- generate feature importance data
-Manage models
-- register a trained model
-- monitor model history
-- monitor data drift 
+#### 3.3.1 select a model interpreter
+#### 3.3.2 generate feature importance data
+### 3.4 Manage models
+#### 3.4.1 register a trained model
+#### 3.4.2 monitor model history
+#### 3.4.3 monitor data drift 
 
 ## 4 Deploy and Consume Models (20-25%)
 ### 4.1 Create production compute targets
-- consider security for deployed services
-- evaluate compute options for deployment
+#### 4.1.1 consider security for deployed services
+#### 4.1.2 evaluate compute options for deployment
 ### 4.2 Deploy a model as a service
-- configure deployment settings
-- consume a deployed service
-- troubleshoot deployment container issues
+#### 4.2.1 configure deployment settings
+#### 4.2.2 consume a deployed service
+#### 4.2.3 troubleshoot deployment container issues
 ### 4.3 Create a pipeline for batch inferencing
-- publish a batch inferencing pipeline
-- run a batch inferencing pipeline and obtain outputs
+#### 4.3.1 publish a batch inferencing pipeline
+#### 4.3.2 run a batch inferencing pipeline and obtain outputs
 ### 4.4 Publish a designer pipeline as a web service
-- create a target compute resource
-- configure an Inference pipeline
-- consume a deployed endpoint
+#### 4.4.1 create a target compute resource
+#### 4.4.2 configure an Inference pipeline
+#### 4.4.3 consume a deployed endpoint
