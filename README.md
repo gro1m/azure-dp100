@@ -309,6 +309,102 @@ for logged_run in diabetes_experiment.get_runs():
 #### 2.2.2 consume data from a data store in an experiment by using the Azure Machine Learning SDK
 #### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning SDK
 #### 2.2.4 choose an estimator for a training experiment
+```python
+%%writefile $training_folder/diabetes_training.py
+# Import libraries
+from azureml.core import Run
+import pandas as pd
+import numpy as np
+import joblib
+import os
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+
+# Get the experiment run context
+run = Run.get_context()
+
+# load the diabetes dataset
+print("Loading Data...")
+diabetes = pd.read_csv('diabetes.csv')
+
+# Separate features and labels
+X, y = diabetes[['Pregnancies','PlasmaGlucose','DiastolicBloodPressure','TricepsThickness','SerumInsulin','BMI','DiabetesPedigree','Age']].values, diabetes['Diabetic'].values
+
+# Split data into training set and test set
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=0)
+
+# Set regularization hyperparameter
+reg = 0.01
+
+# Train a logistic regression model
+print('Training a logistic regression model with regularization rate of', reg)
+run.log('Regularization Rate',  np.float(reg))
+model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, y_train)
+
+# calculate accuracy
+y_hat = model.predict(X_test)
+acc = np.average(y_hat == y_test)
+print('Accuracy:', acc)
+run.log('Accuracy', np.float(acc))
+
+# calculate AUC
+y_scores = model.predict_proba(X_test)
+auc = roc_auc_score(y_test,y_scores[:,1])
+print('AUC: ' + str(auc))
+run.log('AUC', np.float(auc))
+
+# Save the trained model in the outputs folder
+os.makedirs('outputs', exist_ok=True)
+joblib.dump(value=model, filename='outputs/diabetes_model.pkl')
+
+run.complete()
+``` 
+
+```python
+from azureml.train.estimator import Estimator
+from azureml.core import Experiment
+
+# Create an estimator
+estimator = Estimator(source_directory=training_folder,
+                      entry_script='diabetes_training.py',
+                      compute_target='local',
+                      conda_packages=['scikit-learn']
+                      )
+
+# Create an experiment
+experiment_name = 'diabetes-training'
+experiment = Experiment(workspace = ws, name = experiment_name)
+
+# Run the experiment based on the estimator
+run = experiment.submit(config=estimator)
+run.wait_for_completion(show_output=True)
+``` 
+**Use a Framework-Specific Estimator**
+You used a generic Estimator class to run the training script, but you can also take advantage of framework-specific estimators that include environment definitions for common machine learning frameworks. In this case, you're using Scikit-Learn, so you can use the SKLearn estimator. This means that you don't need to specify the scikit-learn package in the configuration.
+```python
+from azureml.train.sklearn import SKLearn
+from azureml.widgets import RunDetails
+
+# Create an estimator
+estimator = SKLearn(source_directory=training_folder,
+                    entry_script='diabetes_training.py',
+                    script_params = {'--reg_rate': 0.1},
+                    compute_target='local'
+                    )
+
+# Create an experiment
+experiment_name = 'diabetes-training'
+experiment = Experiment(workspace = ws, name = experiment_name)
+
+# Run the experiment
+run = experiment.submit(config=estimator)
+
+# Show the run details while running
+RunDetails(run).show()
+run.wait_for_completion()
+```
 ### 2.3 Generate metrics from an experiment run
 #### 2.3.1 log metrics from an experiment run
 Every experiment generates log files that include the messages that would be written to the terminal during interactive execution. This enables you to use simple print statements to write messages to the log. However, if you want to record named metrics for comparison across runs, you can do so by using the Run object; which provides a range of logging functions specifically for this purpose. These include:
