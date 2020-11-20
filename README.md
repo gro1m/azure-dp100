@@ -188,7 +188,6 @@ for dataset_name in list(ws.datasets.keys()):
     print("\t", dataset.name)
 ```
 
-
 ## 2 Run Experiments and Train Models (25-30%)
 ### 2.1 Create models by using Azure Machine Learning Designer
 #### 2.1.1 create a training pipeline by using Azure Machine Learning designer
@@ -307,6 +306,40 @@ for logged_run in diabetes_experiment.get_runs():
 ```
 
 #### 2.2.2 consume data from a data store in an experiment by using the Azure Machine Learning SDK
+
+Working with Datastores
+Although it's fairly common for data scientists to work with data on their local file system, in an enterprise environment it can be more effective to store the data in a central location where multiple data scientists can access it. In this lab, you'll store data in the cloud, and use an Azure Machine Learning datastore to access it.
+```python
+# Connect to Your Workspace
+import azureml.core
+from azureml.core import Workspace
+ws = Workspace.from_config()
+print('Ready to use Azure ML {} to work with {}'.format(azureml.core.VERSION, ws.name))
+
+# View Datastores in the Workspace
+from azureml.core import Datastore
+default_ds = ws.get_default_datastore() # get default datastore
+
+for ds_name in ws.datastores: # enumerate all datastores, indicating which is the default
+    print(ds_name, "- Default =", ds_name == default_ds.name)
+
+# Get a Datastore to Work With
+aml_datastore = Datastore.get(ws, 'aml_data')
+print(aml_datastore.name,":", aml_datastore.datastore_type + " (" + aml_datastore.account_name + ")")
+
+# Set the Default Datastore (for convenience)
+ws.set_default_datastore('aml_data')
+default_ds = ws.get_default_datastore()
+print(default_ds.name)
+
+# Upload Data to a Datastore
+default_ds.upload_files(files=['./data/diabetes.csv', './data/diabetes2.csv'], # Upload the diabetes csv files in /data
+                       target_path='diabetes-data/', # Put it in a folder path in the datastore
+                       overwrite=True, # Replace existing files of the same name
+                       show_progress=True)
+                       
+``` 
+
 #### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning SDK
 #### 2.2.4 choose an estimator for a training experiment
 ```python
