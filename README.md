@@ -18,7 +18,7 @@ A workspace defines the boundary for a set of related machine learning assets. Y
 * Workspaces as Azure Resources
 
 Workspaces are Azure resources, and as such they are defined within a resource group in an Azure subscription, along with other related Azure resources that are required to support the workspace.
-
+![](workspace_overview.png)
 
 The Azure resources created alongside a workspace include:
 * A storage account - used to store files used by the workspace as well as data for experiments and model training.
