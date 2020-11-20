@@ -53,7 +53,7 @@ Use the Azure Command Line Interface (CLI) with the Azure Machine Learning CLI e
 
 Create an Azure Resource Manager template, see the[Azure Machine Learning documentation](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-create-workspace-template?tabs=azcli).
 
-** NOTE **
+**NOTE**
 *Basic* edition as opposed to *Enterprise* edition of the workspace have lower cost, but do not include capabilities like AutoML, the Visual Designer, and data drift monitoring. For the details, see: https://azure.microsoft.com/en-us/pricing/details/machine-learning/.
 
 #### 1.1.2 configure workspace settings
@@ -106,8 +106,30 @@ A previously released tool named Azure Machine Learning Studio provided a free s
 To use Azure Machine Learning studio, use a a web browser to navigate to https://ml.azure.com and sign in using credentials associated with your Azure subscription. You can then select the subscription and workspace you want to manage.
 
 ### 1.2 Manage data objects in an Azure Machine Learning workspace
-- register and maintain data stores
-- create and manage datasets
+#### 1.2.1 register and maintain data stores
+#### 1.2.2 create and manage datasets
+2. In the *Studio* interface, view the **Datasets** page. Datasets represent specific data files or tables that you plan to work with in Azure ML.
+3. Create a new dataset from web files, using the following settings:
+    * **Basic Info**:
+        * **Web URL**: https://aka.ms/diabetes-data
+        * **Name**: diabetes dataset (*be careful to match the case and spacing*)
+        * **Dataset type**: Tabular
+        * **Description**: Diabetes data
+    * **Settings and preview**:
+        * **File format**: Delimited
+        * **Delimiter**: Comma
+        * **Encoding**: UTF-8
+        * **Column headers**: Use headers from first file
+        * **Skip rows**: None
+    * **Schema**:
+        * Include all columns other than **Path**
+        * Review the automatically detected types
+    * **Confirm details**:
+        * Do not profile the dataset after creation
+4. After the dataset has been created, open it and view the **Explore** page to see a sample of the data. This data represents details from patients who have been tested for diabetes, and you will use it in many of the subsequent labs in this course.
+
+    > **Note**: You can optionally generate a *profile* of the dataset to see more details. You'll explore datasets in more detail later in the course.
+
 ### 1.3 Manage experiment compute contexts
 #### 1.3.1 create a compute instance
 1. In the Azure Machine Learning studio web interface for your workspace, view the **Compute** page. This is where you'll manage all the compute targets for your data science activities.
