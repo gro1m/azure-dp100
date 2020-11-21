@@ -1753,7 +1753,195 @@ for model in Model.list(ws):
     print('\n')
 ```
 #### 3.4.2 monitor model history
+Application Insights is an application performance management service in Microsoft Azure that enables the capture, storage, and analysis of telemetry data from applications. You can use Application Insights to monitor telemetry from many kinds of application, including applications that are not running in Azure. All that's required is a low-overhead instrumentation package to capture and send the telemetry data to Application Insights. The necessary package is already included in Azure Machine Learning Web services.
+
+To log telemetry in application insights from an Azure machine learning service, you must have an Application Insights resource associated with your Azure Machine Learning workspace, and you must configure your service to use it for telemetry logging.
+
+Associating Application Insights with a Workspace
+When you create an Azure Machine Learning workspace, you can select an Azure Application Insights resource to associate with it. If you do not select an existing Application Insights resource, a new one is created in the same resource group as your workspace.
+
+You can determine the Application Insights resource associated with your workspace by viewing the Overview page of the workspace blade in the Azure portal, or by using the get_details() method of a Workspace object:
+```python
+from azureml.core import Workspace
+
+ws = Workspace.from_config()
+ws.get_details()['applicationInsights']
+
+Enabling Application Insights for a Service
+When deploying a new real-time service, you can enable Application Insights in the deployment configuration for the service:
+
+dep_config = AciWebservice.deploy_configuration(cpu_cores = 1,
+                                                memory_gb = 1,
+                                                enable_app_insights=True)
+``` 
+If you want to enable Application Insights for a service that is already deployed, you can modify the deployment configuration for Azure Kubernetes Service (AKS) based services in the Azure portal, or you can update any web service by using the Azure Machine Learning SDK:
+```python
+service = ws.webservices['my-svc']
+service.update(enable_app_insights=True)
+``` 
+
+Application Insights automatically captures any information written to the standard output and error logs, and provides a query capability to view data in these logs.
+
+**Writing Log Data**
+To capture telemetry data for Application insights, you can write any values to the standard output log in the scoring script for your service by using a print statement:
+```python
+def init():
+    global model
+    model = joblib.load(Model.get_model_path('my_model'))
+def run(raw_data):
+    data = json.loads(raw_data)['data']
+    predictions = model.predict(data)
+    log_txt = 'Data:' + str(data) + ' - Predictions:' + str(predictions)
+    print(log_txt)
+    return predictions.tolist()
+```
+
+Azure Machine Learning creates a custom dimension in the Application Insights data model for the output you write.
+
+Qurying Logs in Application Insights
+To analyze captured log data, you can use the Log Analytics query interface for Application Insights in the Azure portal. This interface supports a SQL-like query syntax that you can use to extract fields from logged data, including custom dimensions created by your Azure Machine Learning service.
+
+For example, the following query returns the timestamp and customDimensions.Content fields from log traces that have a message field value of STDOUT (indicating the data is in the standard output log) and a customDimensions.[“Service Name”] field value of my-svc:
+
+```powershell
+traces
+|where message == "STDOUT"
+  and customDimensions.["Service Name"] = "my-svc"
+| project  timestamp, customDimensions.Content
+```
+
 #### 3.4.3 monitor data drift 
+**Creating a Data Drift Monitor**
+Azure Machine Learning supports data drift monitoring through the use of datasets. You can compare two registered datasets to detect data drift, or you can capture new feature data submitted to a deployed model service and compare it to the dataset with which the model was trained.
+
+*Monitoring Data Drift by Comparing Datasets*
+It's common for organizations to continue to collect new data after a model has been trained. For example, a health clinic might use diagnostic measurements from previous patients to train a model that predicts diabetes likelihood, but continue to collect the same diagnostic measurements from all new patients. The clinic's data scientists could then periodically compare the growing collection of new data to the original training data, and identify any changing data trends that might affect model accuracy.
+
+To monitor data drift using registered datasets, you need to register two datasets:
+* A baseline dataset - usually the original training data.
+* A target dataset that will be compared to the baseline based on time intervals. This dataset requires a column for each feature you want to compare, and a timestamp column so the rate of data drift can be measured.
+
+After creating these datasets, you can define a dataset monitor to detect data drift and trigger alerts if the rate of drift exceeds a specified threshold. You can create dataset monitors using the visual interface in Azure Machine Learning studio, or by using the DataDriftDetector class in the Azure Machine Learning SDK:
+```python
+from azureml.datadrift import DataDriftDetector
+monitor = DataDriftDetector.create_from_datasets(workspace=ws,
+                                                 name='dataset-drift-detector',
+                                                 baseline_data_set=train_ds,
+                                                 target_data_set=new_data_ds,
+                                                 compute_target='aml-cluster',
+                                                 frequency='Week',
+                                                 feature_list=['age','height', 'bmi'],
+                                                 latency=24)
+``` 
+After creating the dataset monitor, you can backfill to immediately compare the baseline dataset to existing data in the target dataset:
+```python
+import datetime as dt
+backfill = monitor.backfill( dt.datetime.now() - dt.timedelta(weeks=6), dt.datetime.now())
+``` 
+More Information: For more information about monitoring datasets for data drift, see Detect data drift on datasets in the Azure Machine Learning documentation.
+
+*Monitoring Data Drift in Service Inference Data*
+If you have deployed a model as a real-time web service, you can capture new inferencing data as it is submitted, and compare it to the original training data to detect data drift. This is a little more complex to set up initially than using a dataset monitor, but has the benefit of automatically collecting new target data as the deployed model is used.
+
+*Register the Baseline Dataset with the Model*
+To monitor deployed models for data drift, you must include the training dataset in the model registration to provide a baseline for comparison:
+```python
+from azureml.core import Model, Dataset
+
+model = Model.register(workspace=ws,model_path='./model/model.pkl', model_name='my_model',
+                       datasets=[(Dataset.Scenario.TRAINING, train_ds)])
+```  
+Enable Data Collection for the Deployed Model
+To collect inference data for comparison, you must enable data collection for services in which the model, is used. To do this, you must use the ModelDataCollector class in each service's scoring script, writing code to capture data and predictions and write them to the data collector (which will store the collected data in Azure blob storage):
+```python
+from azureml.monitoring import ModelDataCollector
+
+def init():
+    global model, data_collect, predict_collect
+    model_name = 'my_model'
+    model = joblib.load(Model.get_model_path(model_name))
+
+    # Enable collection of data and predictions
+    data_collect = ModelDataCollector(model_name,
+                                      designation='inputs',
+                                      features=['age','height', 'bmi'])
+    predict_collect = ModelDataCollector(model_name,
+                                         designation='predictions',
+                                         features=['prediction'])
+def run(raw_data):
+    data = json.loads(raw_data)['data']
+    predictions = model.predict(data)
+
+    # collect data and predictions
+    data_collect(data)
+    predict_collect(predictions)
+
+    return predictions.tolist()
+```  
+With the data collection code in place in the scoring script, you can enable data collection in the deployment configuration:
+```python
+from azureml.core.webservice import AksWebservice
+dep_config = AksWebservice.deploy_configuration(collect_model_data=True)
+```  
+
+*Configure Data Drift Detection*
+Now that the baseline dataset is registered with the model, and the target data is being collected by deployed services, you can configure data drift monitoring by using a DataDriftDetector class:
+```python
+from azureml.datadrift import DataDriftDetector, AlertConfiguration
+
+# create a new DataDriftDetector object for the deployed model
+model = ws.models['my_model']
+datadrift = DataDriftDetector.create_from_model(ws, model.name, model.version,
+                                     services=['my-svc'],
+                                     frequency="Week")
+
+The data drift detector will run at the specified frequency, but you can run it on-demand as an experiment:
+
+from azureml.core import Experiment, Run
+from azureml.widgets import RunDetails
+import datetime as dt
+
+# or specify existing compute cluster
+run = datadrift.run(target_date=dt.today(),
+                    services=['my-svc'],
+                    feature_list=['age','height', 'bmi'],
+                    compute_target='aml-cluster')
+
+# show details of the data drift run
+exp = Experiment(ws, datadrift._id)
+dd_run = Run(experiment=exp, run_id=run.id)
+RunDetails(dd_run).show()
+``` 
+
+**Data Drift Schedules and Alerts**
+When you define a data monitor, you specify a schedule on which it should run. Additionally, you can specify a threshold for the rate of data drift and an operator email address for notifications if this threshold is exceeded.
+
+*Configuring Data Drift Monitor Schedules*
+Data drift monitoring works by running a comparison at scheduled frequency, and calculating data drift metrics for the features in the dataset that you want to monitor. You can define a schedule to run every Day, Week, or Month.
+
+For dataset monitors, you can specify a latency, indicating the number of hours to allow for new data to be collected and added to the target dataset. For deployed model data drift monitors, you can specify a schedule_start time value to indicate when the data drift run should start (if omitted, the run will start at the current time).
+
+*Configuring Alerts*
+Data drift is measured using a calculated magnitude of change in the statistical distribution of feature values over time. You can expect some natural random variation between the baseline and target datasets, but you should monitor for large changes that might indicate significant data drift.
+
+You can define a threshold for data drift magnitude above which you want to be notified, and configure alert notifications by email.
+```python
+alert_email AlertConfiguration('data_scientists@contoso.com')
+monitor = DataDriftDetector.create_from_datasets(ws, 'dataset-drift-detector',
+                                                 baseline_data_set, target_data_set,
+                                                 compute_target=cpu_cluster,
+                                                 frequency='Week', latency=2,
+                                                 drift_threshold=.3,
+                                                 alert_configuration=alert_email)
+``` 
+
+**Reviewing Data Drift**
+You can view the data drift metrics your monitor has collected in Azure Machine Learning studio.
+* To see data drift for datasets, view the Dataset monitors tab of the Datasets page.
+* To see data drift for a deployed model, open the model on the Models page and view its Data drift tab.
+
+*Data Drift Visualizations*
+Data drift visualizations for datasets and models include the overall data drift magnitude, and a measure of contribution to data drift for each feature.
 
 ## 4 Deploy and Consume Models (20-25%)
 ### 4.1 Create production compute targets
