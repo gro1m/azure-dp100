@@ -727,9 +727,11 @@ The previous code produces output similar to this:
 from azureml.core import Model
 
 # Register the model
-run.register_model(model_path='outputs/diabetes_model.pkl', model_name='diabetes_model',
+run.register_model(model_path='outputs/diabetes_model.pkl', 
+                   model_name='diabetes_model',
                    tags={'Training context':'Parameterized SKLearn Estimator'},
-                   properties={'AUC': run.get_metrics()['AUC'], 'Accuracy': run.get_metrics()['Accuracy']})
+                   properties={'AUC': run.get_metrics()['AUC'], 
+                               'Accuracy': run.get_metrics()['Accuracy']})
 
 # List registered models
 for model in Model.list(ws):
