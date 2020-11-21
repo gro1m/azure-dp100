@@ -1073,6 +1073,103 @@ pipeline_run = experiment.submit(train_pipeline, regenerate_outputs=True)
 ```
 #### 2.4.4 monitor pipeline runs
 
+#### --- publishing pipelines --- ####
+After you have created a pipeline, you can publish it to create a REST endpoint through which the pipeline can be run on demand.
+To publish a pipeline, you can call its publish method, as shown here:
+```python
+published_pipeline = pipeline.publish(name='training_pipeline',
+                                          description='Model training pipeline',
+                                          version='1.0')
+``` 
+
+Alternatively, you can call the publish method on a successful run of the pipeline:
+```python
+# Get the most recent run of the pipeline
+pipeline_experiment = ws.experiments.get('training-pipeline')
+run = list(pipeline_experiment.get_runs())[0]
+
+# Publish the pipeline from the run
+published_pipeline = run.publish_pipeline(name='training_pipeline',
+                                          description='Model training pipeline',
+                                          version='1.0')
+
+After the pipeline has been published, you can view it in Azure Machine Learning studio. You can also determine the URI of its endpoint like this:
+
+rest_endpoint = published_pipeline.endpoint
+print(rest_endpoint)
+``` 
+
+**Using a Published Pipeline**
+To initiate a published endpoint, you make an HTTP request to its REST endpoint, passing an authorization header with a token for a service principal with permission to run the pipeline, and a JSON payload specifying the experiment name. The pipeline is run asynchronously, so the response from a successful REST call includes the run ID. You can use this to track the run in Azure Machine Learning studio.
+
+For example, the following Python code makes a REST request to run a pipeline and displays the returned run ID.
+```python 
+import requests
+
+response = requests.post(rest_endpoint,
+                         headers=auth_header,
+                         json={"ExperimentName": "run_training_pipeline"})
+run_id = response.json()["Id"]
+print(run_id)
+``` 
+
+**Defining Parameters for a Pipeline**
+You can increase the flexibility of a pipeline by defining parameters. To define parameters for a pipeline, create a PipelineParameter object for each parameter, and specify each parameter in at least one step.
+
+For example, you could use the following code to include a parameter for a regularization rate in the script used by an estimator:
+```python
+from azureml.pipeline.core.graph import PipelineParameter
+reg_param = PipelineParameter(name='reg_rate', default_value=0.01)
+
+...
+
+step2 = EstimatorStep(name = 'train model',
+                      estimator = sk_estimator,
+                      compute_target = 'aml-cluster',
+                      inputs=[prepped],
+                      estimator_entry_script_arguments=['--folder', prepped,
+                                                        '--reg', reg_param])
+``` 
+
+Note: You must define parameters for a pipeline before publishing it.
+
+*Running a Pipeline with a Parameter*
+After you publish a parameterized pipeline, you can pass parameter values in the JSON payload for the REST interface:
+```python
+response = requests.post(rest_endpoint,
+                         headers=auth_header,
+                         json={"ExperimentName": "run_training_pipeline",
+                               "ParameterAssignments": {"reg_rate": 0.1}})
+``` 
+
+*Scheduling a Pipeline*
+After you have published a pipeline, you can initiate it on demand through its REST endpoint, or you can have the pipeline run automatically based on a periodic schedule or in response to data updates. To schedule a pipeline to run at periodic intervals, you must define a ScheduleRecurrance that determines the run frequency, and use it to create a Schedule.
+For example, the following code schedules a daily run of a published pipeline:
+```python
+from azureml.pipeline.core import ScheduleRecurrence, Schedule
+
+daily = ScheduleRecurrence(frequency='Day', interval=1)
+pipeline_schedule = Schedule.create(ws, name='Daily Training',
+                                        description='trains model every day',
+                                        pipeline_id=published_pipeline.id,
+                                        experiment_name='Training_Pipeline',
+                                        recurrence=daily)
+``` 
+*Triggering a Pipeline Run on Data Changes*
+To schedule a pipeline to run whenever data changes, you must create a Schedule that monitors a specified path on a datastore, like this:
+```python
+from azureml.core import Datastore
+from azureml.pipeline.core import Schedule
+
+training_datastore = Datastore(workspace=ws, name='blob_data')
+pipeline_schedule = Schedule.create(ws, name='Reactive Training',
+                                    description='trains model on data change',
+                                    pipeline_id=published_pipeline_id,
+                                    experiment_name='Training_Pipeline',
+                                    datastore=training_datastore,
+                                    path_on_datastore='data/training')
+ ```
+
 ## 3 Optimize and Manage Models (20-25%)
 ### 3.1 Use Automated ML to create optimal models
 #### 3.1.1 use the Automated ML interface in Azure Machine Learning studio
