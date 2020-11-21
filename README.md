@@ -108,8 +108,10 @@ To use Azure Machine Learning studio, use a a web browser to navigate to https:/
 ### 1.2 Manage data objects in an Azure Machine Learning workspace
 #### 1.2.1 register and maintain data stores
 #### 1.2.2 create and manage datasets
-2. In the *Studio* interface, view the **Datasets** page. Datasets represent specific data files or tables that you plan to work with in Azure ML.
-3. Create a new dataset from web files, using the following settings:
+
+**Azure portal**
+1. In the *Studio* interface, view the **Datasets** page. Datasets represent specific data files or tables that you plan to work with in Azure ML.
+2. Create a new dataset from web files, using the following settings:
     * **Basic Info**:
         * **Web URL**: https://aka.ms/diabetes-data
         * **Name**: diabetes dataset (*be careful to match the case and spacing*)
@@ -126,9 +128,82 @@ To use Azure Machine Learning studio, use a a web browser to navigate to https:/
         * Review the automatically detected types
     * **Confirm details**:
         * Do not profile the dataset after creation
-4. After the dataset has been created, open it and view the **Explore** page to see a sample of the data. This data represents details from patients who have been tested for diabetes, and you will use it in many of the subsequent labs in this course.
+3. After the dataset has been created, open it and view the **Explore** page to see a sample of the data. This data represents details from patients who have been tested for diabetes, and you will use it in many of the subsequent labs in this course.
 
     > **Note**: You can optionally generate a *profile* of the dataset to see more details. You'll explore datasets in more detail later in the course.
+    
+Datasets are versioned packaged data objects that can be easily consumed in experiments and pipelines. Datasets are the recommended way to work with data, and are the primary mechanism for advanced Azure Machine Learning capabilities like data labeling and data drift monitoring.
+
+**Types of Dataset**
+Datasets are typically based on files in a datastore, though they can also be based on URLs and other sources. You can create the following types of dataset:
+
+* Tabular: The data is read from the dataset as a table. You should use this type of dataset when your data is consistently structured and you want to work with it in common tabular data structures, such as Pandas dataframes.
+
+* File: The dataset presents a list of file paths that can be read as though from the file system. Use this type of dataset when your data is unstructured, or when you need to process the data at the file level (for example, to train a convolutional neural network from a set of image files).
+
+You can create datasets from individual files or multiple file paths. The paths can include wildcards (for example, /files/*.csv) making it possible to encapsulate data from a large number of files in a single dataset.
+
+You can create a dataset and work with it immediately, and you can then register the dataset in the workspace to make it available for use in experiments and data processing pipelines later.
+
+You can create datasets by using the visual interface in Azure Machine Learning studio, or you can use the Azure Machine Learning SDK.
+
+**Creating and Registering Tabular Datasets**
+To create a tabular dataset using the SDK, use the from_delimited_files method of the Dataset.Tabular class, like this:
+```python
+from azureml.core import Dataset
+
+blob_ds = ws.get_default_datastore()
+csv_paths = [(blob_ds, 'data/files/current_data.csv'),
+             (blob_ds, 'data/files/archive/*.csv')]
+tab_ds = Dataset.Tabular.from_delimited_files(path=csv_paths)
+tab_ds = tab_ds.register(workspace=ws, name='csv_table')
+``` 
+
+The dataset in this example includes data from two file paths within the default datastore:
+* The *current_data.csv* file in the *data/files* folder.
+* All *.csv* files in the *data/files/archive/* folder.
+
+After creating the dataset, the code registers it in the workspace with the name *csv_table*.
+
+**Creating and Registering File Datasets**
+To create a file dataset using the SDK, use the from_files method of the Dataset.File class, like this:
+```python
+from azureml.core import Dataset
+
+blob_ds = ws.get_default_datastore()
+file_ds = Dataset.File.from_files(path=(blob_ds, 'data/files/images/*.jpg'))
+file_ds = file_ds.register(workspace=ws, name='img_files')
+``` 
+
+The dataset in this example includes all *.jpg* files in the *data/files/images* path within the default datastore:
+
+After creating the dataset, the code registers it in the workspace with the name *img_files*.
+
+**Retrieving a Registered Dataset**
+After registering a dataset, you can retrieve it by using any of the following techniques:
+
+The datasets dictionary attribute of a Workspace object.
+
+The *get_by_name* or *get_by_id* method of the Dataset class.
+
+Both of these techniques are shown in the following code:
+```python
+import azureml.core
+from azureml.core import Workspace, Dataset
+
+# Load the workspace from the saved config file
+ws = Workspace.from_config()
+
+# Get a dataset from the workspace datasets collection
+ds1 = ws.datasets['csv_table']
+
+# Get a dataset by name from the datasets class
+ds2 = Datasets.get_by_name(ws, 'img_files')
+
+# Get the files in the dataset
+for file_path in ds2.to_path():
+   print(file_path)
+``` 
 
 ### 1.3 Manage experiment compute contexts
 #### 1.3.1 create a compute instance
@@ -341,6 +416,70 @@ default_ds.upload_files(files=['./data/diabetes.csv', './data/diabetes2.csv'], #
 ``` 
 
 #### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning SDK
+You can read data directly from a dataset, or you can pass a dataset as a named input to a script configuration or estimator.
+If you have a reference to a dataset, you can access its contents directly.
+
+For tabular datasets, most data processing begins by reading the dataset as a Pandas dataframe:
+```python
+df = tab_ds.to_pandas_dataframe()
+# code to work with dataframe goes here
+``` 
+
+When working with a file dataset, you can use the to_path() method to return a list of the file paths encapsulated by the dataset:
+```python
+for file_path in file_ds.to_path():
+    print(file_path)
+``` 
+
+**Passing a Dataset to an Experiment Script**
+When you need to access a dataset in an experiment script, you can pass the dataset as an input to a ScriptRunConfig or an Estimator. For example, the following code passes a tabular dataset to an estimator:
+```python 
+estimator = SKLearn( source_directory='experiment_folder',
+                     entry_script='training_script.py'
+                     compute_target='local',
+                     inputs=[tab_ds.as_named_input('csv_data')],
+                     pip_packages=['azureml-dataprep[pandas]')
+```
+**> Note **: since the script will need to work with a Dataset object, you must include either the full azureml-sdk package or the azureml-dataprep package with the pandas extra library in the script's compute environment.
+
+In the experiment script itself, you can access the input and work with the Dataset object it references like this:
+```python
+run = Run.get_context()
+data = run.input_datasets['csv_data'].to_pandas_dataframe()
+``` 
+
+When passing a file dataset, you must specify the access mode. For example:
+```python
+estimator = Estimator( source_directory='experiment_folder',
+                     entry_script='training_script.py',
+                     compute_target='local',
+                     inputs=[img_ds.as_named_input('img_data').as_download(path_on_compute='data')],
+                     pip_packages=['azureml-dataprep[pandas]')
+``` 
+When a file dataset is passed to the estimator, a mount point from which the script can read the files has to be defined:
+- for large volumes of data, you would generally use the *as_mount* method to stream the files directly from the dataset source
+- When running on local compute though, you need to use the *as_download* option to download the dataset files to a local folder.
+
+**Dataset Versioning**
+Datasets can be versioned, enabling you to track historical versions of datasets that were used in experiments, and reproduce those experiments with data in the same state.
+
+*Creating a New Version of a Dataset*
+You can create a new version of a dataset by registering it with the same name as a previously registered dataset and specifying the create_new_version property:
+```python 
+img_paths = [(blob_ds, 'data/files/images/*.jpg'),
+             (blob_ds, 'data/files/images/*.png')]
+file_ds = Dataset.File.from_files(path=img_paths)
+file_ds = file_ds.register(workspace=ws, name='img_files', create_new_version=True)
+``` 
+
+In this example, the .png files in the images folder have been added to the definition of the img_paths dataset example used in the previous topic.
+
+*Retrieving a Specific Dataset version*
+You can retrieve a specific version of a dataset by specifying the version parameter in the get_by_name method of the Dataset class.
+```python 
+img_ds = Dataset.get_by_name(workspace=ws, name='img_files', version=2)
+``` 
+
 #### 2.2.4 choose an estimator for a training experiment
 ```python
 %%writefile $training_folder/diabetes_training.py
@@ -414,6 +553,7 @@ experiment = Experiment(workspace = ws, name = experiment_name)
 run = experiment.submit(config=estimator)
 run.wait_for_completion(show_output=True)
 ``` 
+
 **Use a Framework-Specific Estimator**
 You used a generic Estimator class to run the training script, but you can also take advantage of framework-specific estimators that include environment definitions for common machine learning frameworks. In this case, you're using Scikit-Learn, so you can use the SKLearn estimator. This means that you don't need to specify the scikit-learn package in the configuration.
 ```python
