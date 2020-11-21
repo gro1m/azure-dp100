@@ -1180,11 +1180,120 @@ pipeline_schedule = Schedule.create(ws, name='Reactive Training',
 ### 3.1 Use Automated ML to create optimal models
 #### 3.1.1 use the Automated ML interface in Azure Machine Learning studio
 #### 3.1.2 use Automated ML from the Azure Machine Learning SDK
+To run an automated machine learning experiment, you can either use the user interface in Azure Machine Learning studio, or submit an experiment using the SDK.
+
+**Configuring an Automated Machine Learning Experiment**
+The user interface provides an intuitive way to select options for your automated machine learning experiment. When using the SDK, you have greater flexibility, and you can set experiment options using the AutoMLConfig class, as shown in the following example:
+```python
+from azureml.train.automl import AutoMLConfig
+
+automl_run_config = RunConfiguration(framework='python')
+automl_config = AutoMLConfig(name='Automated ML Experiment',
+                             task='classification',
+                             primary_metric = 'AUC_weighted',
+                             compute_target=aml_compute,
+                             training_data = train_dataset,
+                             validation_data = test_dataset,
+                             label_column_name='Label',
+                             featurization='auto',
+                             iterations=12,
+                             max_concurrent_iterations=4)
+``` 
+One of the most important settings you must specify is the primary_metric. This is the target performance metric for which the optimal model will be determined. Azure Machine Learning supports a set of named metrics for each type of task. To retrieve the list of metrics available for a particular task type, you can use the get_primary_metrics function as shown here:
+```python
+from azureml.train.automl.utilities import get_primary_metrics
+get_primary_metrics('classification')
+``` 
+More Information: You can find a full list of primary metrics and their definitions in https://docs.microsoft.com/en-us/azure/machine-learning/how-to-understand-automated-ml.
+
+**Submitting an Automated Machine Learning Experiment**
+You can submit an automated machine learning experiment like any other SDK-based experiment:
+```python
+from azureml.core.experiment import Experiment
+automl_experiment = Experiment(ws, 'automl_experiment')
+automl_run = automl_experiment.submit(automl_config)
+``` 
 #### 3.1.3 select scaling functions and pre-processing options
+In addition to trying a selection of algorithms, automated machine learning can apply preprocessing transformations to your data, which may improve the performance of a model trained on the featurized data.
+
+**Scaling and Normalization**
+Automated machine learning applies scaling and normalization to numeric data automatically. This helps prevent any large scale features from dominating training. During an automated machine learning experiment, a variety of scaling or normalization techniques will be applied.
+
+**Optional Featurization**
+You can choose to have automated machine learning apply preprocessing transformations such as:
+* Missing value imputation to eliminate nulls in the training dataset.
+* Categorical encoding to convert categorical features to numeric indicators.
+* Dropping high-cardinality features, such as record IDs.
+* Feature engineering (for example, deriving individual date parts from DateTime features)
+* Others…
+
+More info here: https://docs.microsoft.com/en-us/azure/machine-learning/concept-automated-ml#preprocessing
+
 #### 3.1.4 determine algorithms to be searched
+You can use automated machine learning in Azure Machine Learning to train models for the following types of machine learning task:
+* Classification
+* Regression
+* Time Series Forecasting
+
+Azure Machine Learning includes support for numerous commonly used algorithms for these tasks, including:
+
+* Classification Algorithms
+** Logistic Regression
+** Light Gradient Boosting Machine (GBM)
+** Decision Tree
+** Random Forest
+** Naive Bayes
+** Linear Support Vector Machine (SVM)
+** XGBoost
+** Deep Neural Network (DNN) Classifier
+** Others…
+
+* Regression Algorithms
+** Linear Regression
+** Light Gradient Boosting Machine (GBM)
+** Decision Tree
+** Random Forest
+** Elastic Net
+** LARS Lasso
+** XGBoost
+** Others…
+
+* Forecasting Algorithms
+** Linear Regression
+** Light Gradient Boosting Machine (GBM)
+** Decision Tree
+** Random Forest
+** Elastic Net
+** LARS Lasso
+** XGBoost
+** Others…
+
+More Information: For a full list of supported algorithms, see https://docs.microsoft.com/en-us/azure/machine-learning/concept-automated-ml.
+
+**Restricting Algorithm Selection**
+By default, automated machine learning will randomly select from the full range of algorithms for the specified task. You can choose to block individual algorithms from being selected; which can be useful if you know that your data is not suited to a particular type of algorithm, or you have to comply with a policy that restricts the type of machine learning algorithms you can use in your organization.
+
 #### 3.1.5 define a primary metric
 #### 3.1.6 get data for an Automated ML run
 #### 3.1.7 retrieve the best model
+You can monitor automated machine learning experiment runs in Azure Machine Learning studio, or in the Jupyter Notebooks RunDetails widget.
+
+*Retrieving the Best Run and its Model*
+You can easily identify the best run in Azure Machine Learning studio, and download or deploy the model it generated. To accomplish this with the SDK, you can use code like the following example:
+```python
+best_run, fitted_model = automl_run.get_output()
+best_run_metrics = best_run.get_metrics()
+for metric_name in best_run_metrics:
+    metric = best_run_metrics[metric_name]
+    print(metric_name, metric)
+``` 
+
+*Exploring Preprocessing Steps*
+Automated machine learning uses scikit-learn pipelines to encapsulate preprocessing steps with the model. You can view the steps in the fitted model you obtained from the best run using the code above like this:
+```python
+for step_ in fitted_model.named_steps:
+    print(step)
+``` 
 ### 3.2 Use Hyperdrive to tune hyperparameters
 #### 3.2.1 select a sampling method
 The specific values used in a hyperparameter tuning run depend on the type of sampling used.
@@ -1260,7 +1369,127 @@ param_space = {
 ``` 
 #### 3.2.3 define the primary metric
 #### 3.2.4 define early termination options
+With a sufficiently large hyperparameter search space, it could take many iterations (child runs) to try every possible combination. Typically, you set a maximum number of iterations, but this could still result in a large number of runs that don't result in a better model than a combination that has already been tried.
+
+To help prevent wasting time, you can set an early termination policy that abandons runs that are unlikely to produce a better result than previously completed runs. The policy is evaluated at an evaluation_interval you specify, based on each time the target performance metric is logged. You can also set a delay_evaluation parameter to avoid evaluating the policy until a minimum number of iterations have been completed.
+
+**> Note:** Early termination is particularly useful for deep learning scenarios where a deep neural network (DNN) is trained iteratively over a number of epochs. The training script can report the target metric after each epoch, and if the run is significantly underperforming previous runs after the same number of intervals, it can be abandoned.
+
+**Bandit Policy**
+You can use a bandit policy to stop a run if the target performance metric underperforms the best run so far by a specified margin.
+```python
+from azureml.train.hyperdrive import BanditPolicy
+
+early_termination_policy = BanditPolicy(slack_amount = 0.2,
+                                        evaluation_interval=1,
+                                        delay_evaluation=5)
+``` 
+
+This example applies the policy for every iteration after the first five, and abandons runs where the reported target metric is 0.2 or more worse than the best performing run after the same number of intervals.
+
+*Note:* You can also apply a bandit policy using a slack factor, which compares the performance metric as a ratio rather than an absolute value.
+
+**Median Stopping Policy**
+A median stopping policy abandons runs where the target performance metric is worse than the median of the running averages for all runs.
+```python
+from azureml.train.hyperdrive import MedianStoppingPolicy
+
+early_termination_policy = MedianStoppingPolicy(evaluation_interval=1,
+                                                delay_evaluation=5)
+``` 
+**Truncation Selection Policy**
+A truncation selection policy cancels the lowest performing X% of runs at each evaluation interval based on the truncation_percentage value you specify for X.
+```python
+from azureml.train.hyperdrive import TruncationSelectionPolicy
+early_termination_policy = TruncationSelectionPolicy(truncation_percentage=10,
+                                                     evaluation_interval=1,
+                                                     delay_evaluation=5)
+``` 
 #### 3.2.5 find the model that has optimal hyperparameter values
+In Azure Machine Learning, you can tune hyperparameters by running a Hyperdrive experiment.
+To run a Hyperdrive experiment, you need to create a training script just the way you would for any other training experiment, except that your script must:
+* Include an argument for each hyperparameter you want to vary.
+* Log the target performance metric. This is what enables the hyperdrive run to evaluate the performance of the child runs it initiates, and identify the one that produces the best performing model.
+
+For example, the following script trains a logistic regression model using a –regularization argument to set the regularization rate hyperparameter, and logs the accuracy metric with the name Accuracy:
+```python
+import argparse
+import joblib
+from azureml.core import Run
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+
+# Get regularization hyperparameter
+parser = argparse.ArgumentParser()
+parser.add_argument('--regularization', type=float, dest='reg_rate', default=0.01)
+args = parser.parse_args()
+reg = args.reg_rate
+
+# Get the experiment run context
+run = Run.get_context()
+
+# load the training dataset
+data = run.input_datasets['training_data'].to_pandas_dataframe()
+
+# Separate features and labels, and split for training/validatiom
+X = data[['feature1','feature2','feature3','feature4']].values
+y = data['label'].values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30)
+
+# Train a logistic regression model with the reg hyperparameter
+model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, y_train)
+
+# calculate and log accuracy
+y_hat = model.predict(X_test)
+acc = np.average(y_hat == y_test)
+run.log('Accuracy', np.float(acc))
+
+# Save the trained model
+os.makedirs('outputs', exist_ok=True)
+joblib.dump(value=model, filename='outputs/model.pkl')
+
+run.complete()
+
+Note: Note that in the Scikit-Learn LogisticRegression class, C is the inverse of the regularization rate; hence C=1/reg.
+
+Configuring and Running a Hyperdrive Experiment
+To prepare the Hyperdrive experiment, you must use a HyperDriveConfig object to configure the experiment run, as shown here:
+
+from azureml.core import Experiment
+from azureml.train.hyperdrive import HyperDriveConfig, PrimaryMetricGoal
+
+# Assumes ws, sklearn_estimator and param_sampling are already defined
+
+hyperdrive = HyperDriveConfig(estimator=sklearn_estimator,
+                              hyperparameter_sampling=param_sampling,
+                              policy=None,
+                              primary_metric_name='Accuracy',
+                              primary_metric_goal=PrimaryMetricGoal.MAXIMIZE,
+                              max_total_runs=6,
+                              max_concurrent_runs=4)
+
+experiment = Experiment(workspace = ws, name = 'hyperdrive_training')
+hyperdrive_run = experiment.submit(config=hyperdrive)
+``` 
+
+You can monitor Hyperdrive experiments in Azure Machine Learning studio, or by using the Jupyter Notebooks RunDetails widget.
+The experiment will initiate a child run for each hyperparameter combination to be tried, and you can retrieve the logged metrics these runs using the following code:
+```python
+for child_run in run.get_children():
+    print(child_run.id, child_run.get_metrics())
+``` 
+You can also list all runs in descending order of performance like this:
+```python
+for child_run in hyperdrive_.get_children_sorted_by_primary_metric():
+    print(child_run)
+``` 
+
+To retrieve the best performing run, you can use the following code:
+```python
+best_run = hyperdrive_run.get_best_run_by_primary_metric()
+``` 
 ### 3.3 Use model explainers to interpret models
 #### 3.3.1 select a model interpreter
 #### 3.3.2 generate feature importance data
