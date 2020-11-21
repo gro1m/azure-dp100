@@ -1105,6 +1105,12 @@ To initiate a published endpoint, you make an HTTP request to its REST endpoint,
 For example, the following Python code makes a REST request to run a pipeline and displays the returned run ID.
 ```python 
 import requests
+from azureml.core.authentication import InteractiveLoginAuthentication
+
+rest_endpoint = published_pipeline.endpoint
+interactive_auth = InteractiveLoginAuthentication()
+auth_header = interactive_auth.get_authentication_header()
+print("Authentication header ready.")
 
 response = requests.post(rest_endpoint,
                          headers=auth_header,
@@ -1191,7 +1197,6 @@ pipeline_schedule = Schedule.create(ws, name='Reactive Training',
 ### 3.4 Manage models
 #### 3.4.1 register a trained model
 ```python
-
 from azureml.core import Model
 
 # Register the model
