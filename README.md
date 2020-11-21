@@ -1,4 +1,4 @@
-# azure-dp100
+# Summary for Azure DP100 Exam
 
 Resources: 
 - https://github.com/MicrosoftLearning/DP100/tree/master/labdocs
@@ -926,9 +926,151 @@ for env in envs:
 ``` 
 
 ### 2.4 Automate the model training process
+**What is a Pipeline?**
+In Azure Machine Learning, a pipeline is a workflow of machine learning tasks in which each task is implemented as a step.
+
+**> Note:** The term pipeline is used extensively in machine learning, often with different meanings. For example, in Scikit-Learn, you can define pipelines that combine data preprocessing transformations with a training algorithm; and in Azure DevOps, you can define a build or release pipeline to perform the build and configuration tasks required to deliver software. The focus of this module is on Azure Machine Learning pipelines, which encapsulate steps that can be run as an experiment. However, bear in mind that it's perfectly feasible to have an Azure DevOps pipeline with a task that that initiates an Azure Machine Learning pipeline, which in turn includes a step that trains a model based on a Scikit-Learn pipeline!
+
+Steps can be arranged sequentially or in parallel, enabling you to build sophisticated flow logic to orchestrate machine learning operations. Each step can be run on a specific compute target, making it possible to combine different types of processing as required to achieve an overall goal.
+
+*Pipelines as Executable Processes*
+A pipeline can be executed as a process by running the pipeline as an experiment. Each step in the pipeline runs on its allocated compute target as part of the overall experiment run.
+
+You can publish a pipeline as a REST endpoint, enabling client applications to initiate a pipeline run. You can also define a schedule for a pipeline, and have it run automatically at periodic intervals.
+
+*Pipelines and DevOps for Machine Learning*
+As machine learning becomes increasingly ubiquitous in the enterprise, IT organizations are finding a need to integrate model training, management, and deployment into their standard development/operations (DevOps) practices through automation and policy-based release management. The implementation of a continuous integration/continuous delivery (CI/CD) solution for machine learning models is often referred to as “MLOps”, and pipelines are a core element of this.
 #### 2.4.1 create a pipeline by using the SDK
+**Pipeline Steps**
+An Azure Machine Learning pipeline consists of one or more steps that perform tasks. There are many kinds of step supported by Azure Machine Learning pipelines, each with its own specialized purpose and configuration options.
+
+*Types of Step*
+Common kinds of step in an Azure Machine Learning pipeline include:
+
+* PythonScriptStep: Runs a specified Python script.
+* EstimatorStep: Runs an estimator.
+* DataTransferStep: Uses Azure Data Factory to copy data between data stores.
+* DatabricksStep: Runs a notebook, script, or compiled JAR on a databricks cluster.
+* AdlaStep: Runs a U-SQL job in Azure Data Lake Analytics.
+
+**Note:** For a full list of supported step types, see azure.pipeline.steps package documentation.
+
+*Defining Steps in a Pipeline*
+To create a pipeline, you must first define each step and then create a pipeline that includes the steps. The specific configuration of each step depends on the step type. For example the following code defines a PythonScriptStep step that runs a script, and an EstimatorStep step that runs an estimator.
+```python
+from azureml.pipeline.steps import PythonScriptStep, EstimatorStep
+
+# Step to run a Python script
+step1 = PythonScriptStep(name = 'prepare data',
+                         source_directory = 'scripts',
+                         script_name = 'data_prep.py',
+                         compute_target = 'aml-cluster',
+                         runconfig = run_config)
+
+# Step to run an estimator
+step2 = EstimatorStep(name = 'train model',
+                      estimator = sk_estimator,
+                      compute_target = 'aml-cluster')
+``` 
+
+After defining the steps, you can assign them to a pipeline, and run it as an experiment:
+```python
+from azureml.pipeline.core import Pipeline
+from azureml.core import Experiment
+
+# Construct the pipeline
+train_pipeline = Pipeline(workspace = ws, steps = [step1,step2])
+
+# Create an experiment and run the pipeline
+experiment = Experiment(workspace = ws, name = 'training-pipeline')
+pipeline_run = experiment.submit(train_pipeline)
+``` 
+
 #### 2.4.2 pass data between steps in a pipeline
+To use a PipelineData object to pass data between steps, you must:
+* Define a named PipelineData object that references a location in a datastore.
+* Specify the PipelineData object as an input or output for the steps that use it.
+* Pass the PipelineData object as a script argument in steps that run scripts (and include code in those scripts to read or write data)
+
+For example, the following code defines a PipelineData object that for the preprocessed data that must be passed between the steps.
+```python
+from azureml.pipeline.core import PipelineData
+from azureml.pipeline.steps import PythonScriptStep, EstimatorStep
+
+# Get a dataset for the initial data
+raw_ds = Dataset.get_by_name(ws, 'raw_dataset')
+
+# Define a PipelineData object to pass data between steps
+data_store = ws.get_default_datastore()
+prepped_data = PipelineData('prepped',  datastore=data_store)
+
+# Step to run a Python script
+step1 = PythonScriptStep(name = 'prepare data',
+                         source_directory = 'scripts',
+                         script_name = 'data_prep.py',
+                         compute_target = 'aml-cluster',
+                         runconfig = run_config,
+                         # Specify dataset as initial input
+                         inputs=[raw_ds.as_named_input('raw_data')],
+                         # Specify PipelineData as output
+                         outputs=[prepped_data],
+                         # Also pass as data reference to script
+                         arguments = ['--folder', prepped_data])
+
+# Step to run an estimator
+step2 = EstimatorStep(name = 'train model',
+                      estimator = sk_estimator,
+                      compute_target = 'aml-cluster',
+                      # Specify PipelineData as input
+                      inputs=[prepped_data],
+                      # Pass as data reference to estimator script
+                      estimator_entry_script_arguments=['--folder', prepped_data])
+ ``` 
+
+By default the step output from a previous pipeline run is reused without re-running the step as long as the script, source directory, and other parameters for the step have not changed. To change that include `allow_reuse=False` as argument to the step.
+
+In the scripts themselves, you can obtain a reference to the PipelineData object from the script argument, and use it like a local folder.
+```python
+# code in data_prep.py
+from azureml.core import Run
+import argparse
+import os
+
+# Get the experiment run context
+run = Run.get_context()
+
+# Get input dataset as dataframe
+raw_df = run.input_datasets['raw_data'].to_pandas_dataframe()
+
+# Get PipelineData argument
+parser = argparse.ArgumentParser()
+parser.add_argument('--folder', type=str, dest='folder')
+args = parser.parse_args()
+output_folder = args.folder
+
+# code to prep data (in this case, just select specific columns)
+prepped_df = raw_df[['col1', 'col2', 'col3']]
+
+# Save prepped data to the PipelineData location
+os.makedirs(output_folder, exist_ok=True)
+output_path = os.path.join(output_folder, 'prepped_data.csv')
+prepped_df.to_csv(output_path)
+```
+
 #### 2.4.3 run a pipeline
+see also 2.4.1:
+```python
+# Construct the pipeline
+train_pipeline = Pipeline(workspace = ws, steps = [step1,step2])
+
+# Create an experiment and run the pipeline
+experiment = Experiment(workspace = ws, name = 'training-pipeline')
+pipeline_run = experiment.submit(train_pipeline)
+``` 
+If you want to force all steps to be re-run, modify last line like so:
+```python
+pipeline_run = experiment.submit(train_pipeline, regenerate_outputs=True)
+```
 #### 2.4.4 monitor pipeline runs
 
 ## 3 Optimize and Manage Models (20-25%)
