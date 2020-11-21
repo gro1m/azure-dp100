@@ -374,10 +374,10 @@ db_config = DatabricksCompute.attach_configuration(resource_group=db_resource_gr
 # Create the compute
 databricks_compute = ComputeTarget.attach(ws, compute_name, db_config)
 databricks_compute.wait_for_completion(True)
-
+``` 
 Checking for an Existing Compute Target
 In many cases, you will want to check for the existence of a compute target, and only create a new one if there isn't already one with the specified name. To accomplish this, you can catch the ComputeTargetException exception, like this:
-
+```python
 from azureml.core.compute import ComputeTarget, AmlCompute
 from azureml.core.compute_target import ComputeTargetException
 
@@ -2475,4 +2475,98 @@ print(df)
 ### 4.4 Publish a designer pipeline as a web service
 #### 4.4.1 create a target compute resource
 #### 4.4.2 configure an Inference pipeline
+Having trained a model using a training pipeline, you can use it to create an inference pipeline for either real-time or batch prediction.
+![](visual-inference.png)
+An inference pipeline encapsulates the steps required to use the trained model in a web service that predicts labels for new data. It differs from the training pipeline in the following respects:
+
+A web service input defining an interface for new data to be scored is added to the beginning of real-time inference pipelines. By default, this is based on the schema of the training dataset.
+
+Steps that rely on statistics from the training data (such as feature normalization or categorical encoding) are encapsulated in transformation datasets that are applied to new data.
+
+The trained model is encapsulated in a dataset, removing the algorithm and model training modules.
+
+A Web service output containing the scored results is added at the end of real-time inferencing pipelines to define the output returned to applications consuming the service.
+
+**Modifying the Inference Pipeline**
+Before deploying an inference pipeline as a web service, you may want to make some changes to it. For example:
+
+For supervised learning models, consider replacing the training dataset at the beginning of the pipeline with an alternative data definition that does not include the label column. This has the effect of removing the label column from the web service input schema, which is more intuitive for client application developers (who would otherwise need to submit a value for the label that they want the model to predict).
+
+If you choose to remove the label column from the input schema, ensure it is not explicitly referenced in any other modules in the pipeline, as this will cause a runtime exception.
+
+Remove any modules that are not required - for example, if the training pipeline includes an Evaluate Model module, it will be included by default in the inference pipeline, even though it is not used.
+
+Consider filtering the output columns. The Score Model module returns its input data as well as the scored label and probability columns, so by default the web service will return all of these to the client application. The web service may be more efficient if you filter these to include only the required output, such as a row identifier and the scored label and probability.
+
+Consider adding parameters, which can be passed by calling applications to add flexibility to the pipeline. Typically, parameters are used to enable a choice of data sources to be used in the pipeline.
 #### 4.4.3 consume a deployed endpoint
+After creating and modifying an inference pipeline, you can publish an endpoint through which client applications can consume it as a web service.
+
+*Deploying a Real-Time Inference Pipeline*
+For real-time inferencing, you must deploy the pipeline as a service on an Azure Kubernetes Services (AKS) compute target. The deployed pipeline service can then be accessed through an HTTP REST endpoint.
+
+*Publishing a Batch Inference Pipeline*
+If you have created a batch inference pipeline, you can publish an HTTP endpoint through which the pipeline can be initiated. It will run on the Azure Machine Learning training compute target you have selected for the inference pipeline.
+
+Note: It's important to note that batch inference pipelines are run on training compute, even when published as consumable services.
+
+*Consume service endpoint*
+To consume a published service for an inference pipeline, a client application makes a REST request to its HTTP endpoint.
+
+You can view published services in the Endpoints page in Azure Machine Learning studio. Real-time inference endpoints are listed separately from batch pipeline endpoints, but both include starter code you can use to call the endpoint from a client application.
+
+For example, a real-time endpoint page in Azure Machine Learning Studio provides Python code similar to the following:
+```python
+import urllib.request
+import json
+import os
+import ssl
+
+def allowSelfSignedHttps(allowed):
+    # bypass the server certificate verification on client side
+    if allowed and not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None):
+        ssl._create_default_https_context = ssl._create_unverified_context
+
+allowSelfSignedHttps(True) # this line is needed if you use self-signed certificate in your scoring service.
+
+data = {
+    "Inputs": {
+          "input0":
+          [
+              {
+                    'PatientID': "1882185",
+                    'Pregnancies': "9",
+                    'PlasmaGlucose': "104",
+                    'DiastolicBloodPressure': "51",
+                    'TricepsThickness': "7",
+                    'SerumInsulin': "24",
+                    'BMI': "27.36983156",
+                    'DiabetesPedigree': "1.35047",
+                    'Age': "43",
+              },
+          ],
+    },
+    "GlobalParameters":  {
+    }
+}
+
+body = str.encode(json.dumps(data))
+
+url = 'http://10.0.0.1:80/api/v1/service/diabetes_predictor/score'
+api_key = 'a1234567890x' # Replace this with the API key for the web service
+headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ api_key)}
+
+req = urllib.request.Request(url, body, headers)
+
+try:
+    response = urllib.request.urlopen(req)
+
+    result = response.read()
+    print(result)
+except urllib.error.HTTPError as error:
+    print("The request failed with status code: " + str(error.code))
+
+    # Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
+    print(error.info())
+    print(json.loads(error.read().decode("utf8", 'ignore')))
+```
