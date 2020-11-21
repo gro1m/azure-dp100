@@ -746,6 +746,10 @@ from azureml.core import Environment
 from azureml.core.conda_dependencies import CondaDependencies
 
 env = Environment('training_environment')
+
+env.python.user_managed_dependencies = False # Let Azure ML manage dependencies, for custom docker images this has to be set to True
+env.docker.enabled = True # Use a docker container
+
 deps = CondaDependencies.create(conda_packages=['scikit-learn','pandas','numpy'],
                                 pip_packages=['azureml-defaults'])
 env.python.conda_dependencies = deps
@@ -782,7 +786,7 @@ estimator = Estimator(source_directory='experiment_folder'
                       environment_definition=training_env)
 ``` 
 
-When an experiment based on the estimator is run, Azure Machine Learning will look for an existing environment that matches the definition, and if none is found a new environment will be created based on the registered environment specification.
+When an experiment based on the estimator is run, Azure Machine Learning will look for an existing environment that matches the definition, and if none is found a new environment will be created based on the registered environment specification. In the *azureml_logs/60_control_log.txt* you will see the conda environment being built.
 
 **Curated Environments**
 Azure Machine Learning includes a selection of pre-defined curated environments that reflect common usage scenarios. These include environments that are pre-configured with package dependencies for common frameworks, such as Scikit-Learn, PyTorch, Tensorflow, and others.
