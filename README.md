@@ -696,6 +696,113 @@ The previous code produces output similar to this:
 ]
 ```
 #### 2.3.3 use logs to troubleshoot experiment run errors
+
+#### --- Environments --- ####
+What are Environments?
+Python code runs in the context of a virtual environment that defines the version of the Python runtime to be used as well as the installed packages available to the code. In most Python installations, packages are installed and managed in environments using Conda or pip.
+
+Environments in Azure Machine Learning
+In general, Azure Machine Learning handles environment creation and package installation for you - usually through the creation of Docker containers. You can specify the Conda or pip packages you need, and have Azure Machine Learning create an environment for the experiment.
+
+In an enterprise machine learning solution, where experiments may be run in a variety of compute contexts, it can be important to be aware of the environments in which your experiment code is running. Environments are encapsulated by the Environment class; which you can use to create environments and specify runtime configuration for an experiment.
+
+You can have Azure Machine Learning manage environment creation and package installation to define an environment, and then register it for reuse. Alternatively, you can manage your own environments and register them. This makes it possible to define consistent, reusable runtime contexts for your experiments - regardless of where the experiment script is run.
+
+**Creating an Environment from a Specification File**
+You can use a Conda or pip specification file to define the packages required in a Python evironment, and use it to create an Environment object.
+
+For example, you could save the following Conda configuration settings in a file named conda.yml:
+```yaml
+name: py_env
+dependencies:
+  - numpy
+  - pandas
+  - scikit-learn
+  - pip:
+    - azureml-defaults
+```
+
+The you could use the following code creates an Azure Machine Learning environment from the saved specification file:
+```python
+from azureml.core import Environment
+
+env = Environment.from_conda_specification(name='training_environment',
+                                           file_path='./conda.yml')
+``` 
+
+**Creating an Environment from an Existing Conda Environment**
+If you have an existing Conda environment defined on your workstation, you can use it to define an Azure Machine Learning environment:
+```python
+from azureml.core import Environment
+
+env = Environment.from_existing_conda_environment(name='training_environment',
+                                                  conda_environment_name='py_env')
+``` 
+
+**Creating an Environment by Specifying Packages**
+You can define an environment by specifying the Conda and pip packages you need in a CondaDependencies object, like this:
+```python 
+from azureml.core import Environment
+from azureml.core.conda_dependencies import CondaDependencies
+
+env = Environment('training_environment')
+deps = CondaDependencies.create(conda_packages=['scikit-learn','pandas','numpy'],
+                                pip_packages=['azureml-defaults'])
+env.python.conda_dependencies = deps
+``` 
+
+After you've created an environment, you can register it in your workspace and reuse it for future experiments that have the same Python dependencies.
+
+**Registering an Environment**
+Use the register method of an Environment object to register an environment:
+```python
+env.register(workspace=ws)
+``` 
+
+You can view the registered environments in your workspace like this:
+```python
+from azureml.core import Environment
+
+env_names = Environment.list(workspace=ws)
+for env_name in env_names:
+    print('Name:',env_name)
+``` 
+
+**Retrieving and using an Environment**
+You can retrieve a registered environment by using the get method of the Environment class, and then assign it to a ScriptRunConfig or Estimator.
+For example, the following code sample retrieves the training_environment registered environment, and assigns it to an estimator:
+```python
+from azureml.core import Environment
+from azureml.train.estimator import Estimator
+
+training_env = Environment.get(workspace=ws, name='training_environment')
+estimator = Estimator(source_directory='experiment_folder'
+                      entry_script='training_script.py',
+                      compute_target='local',
+                      environment_definition=training_env)
+``` 
+
+When an experiment based on the estimator is run, Azure Machine Learning will look for an existing environment that matches the definition, and if none is found a new environment will be created based on the registered environment specification.
+
+**Curated Environments**
+Azure Machine Learning includes a selection of pre-defined curated environments that reflect common usage scenarios. These include environments that are pre-configured with package dependencies for common frameworks, such as Scikit-Learn, PyTorch, Tensorflow, and others.
+
+Curated environments are registered in all Azure Machine Learning workspaces with a name that begins AzureML-.
+
+**> Note: You can't register your own environments with an “AzureML-” prefix. **
+
+*Viewing Curated Environments*
+To view curated environments and the dependencies they contain, you can run the following code:
+```python
+from azureml.core import Environment
+
+envs = Environment.list(workspace=ws)
+for env in envs:
+    if env.startswith("AzureML"):
+        print("Name",env)
+        print("packages", envs[env].python.conda_dependencies.serialize_to_string())
+``` 
+
 ### 2.4 Automate the model training process
 #### 2.4.1 create a pipeline by using the SDK
 #### 2.4.2 pass data between steps in a pipeline
