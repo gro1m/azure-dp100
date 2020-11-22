@@ -256,7 +256,6 @@ You can create datasets by using the visual interface in Azure Machine Learning 
 To create a tabular dataset using the SDK, use the from_delimited_files method of the Dataset.Tabular class, like this:
 ```python
 from azureml.core import Dataset
-
 blob_ds = ws.get_default_datastore()
 csv_paths = [(blob_ds, 'data/files/current_data.csv'),
              (blob_ds, 'data/files/archive/*.csv')]
@@ -275,7 +274,6 @@ After creating the dataset, the code registers it in the workspace with the name
 To create a file dataset using the SDK, use the from_files method of the Dataset.File class, like this:
 ```python
 from azureml.core import Dataset
-
 blob_ds = ws.get_default_datastore()
 file_ds = Dataset.File.from_files(path=(blob_ds, 
                                         'data/files/images/*.jpg'))
@@ -287,26 +285,21 @@ The dataset in this example includes all *.jpg* files in the *data/files/images*
 After creating the dataset, the code registers it in the workspace with the name *img_files*.
 
 **Retrieving a Registered Dataset**
+
 After registering a dataset, you can retrieve it by using any of the following techniques:
-
-The datasets dictionary attribute of a Workspace object.
-
-The *get_by_name* or *get_by_id* method of the Dataset class.
+* The datasets dictionary attribute of a Workspace object.
+* The *get_by_name* or *get_by_id* method of the Dataset class.
 
 Both of these techniques are shown in the following code:
 ```python
 import azureml.core
 from azureml.core import Workspace, Dataset
-
 # Load the workspace from the saved config file
 ws = Workspace.from_config()
-
 # Get a dataset from the workspace datasets collection
 ds1 = ws.datasets['csv_table']
-
 # Get a dataset by name from the datasets class
 ds2 = Datasets.get_by_name(ws, 'img_files')
-
 # Get the files in the dataset
 for file_path in ds2.to_path():
    print(file_path)
@@ -337,7 +330,7 @@ The most common ways to create or attach a compute target are to use the Compute
 
 A managed compute target is one that is managed by Azure Machine Learning, such as an Azure Machine Learning training cluster.
 
-To create an Azure Machine Learning compute cluster compute target, use the azureml.core.compute.ComputeTarget class and the AmlCompute class, like this:
+To create an Azure Machine Learning compute cluster compute target, use the `azureml.core.compute.ComputeTarget` class and the AmlCompute class, like this:
 ```python
 from azureml.core import Workspace
 from azureml.core.compute import ComputeTarget, AmlCompute
@@ -351,8 +344,7 @@ compute_name = 'aml-cluster'
 # Define compute configuration
 compute_config = AmlCompute.provisioning_configuration(
 vm_size='STANDARD_DS12_V2', min_nodes=0, max_nodes=4, 
-vm_priority='dedicated'
-)
+vm_priority='dedicated')
 
 # Create the compute
 aml_cluster = ComputeTarget.create(ws, compute_name, compute_config)
@@ -443,11 +435,8 @@ from azureml.train.estimator import Estimator
 from azureml.core.compute import ComputeTarget
 
 compute_name = "aml-cluster"
-
 training_cluster = ComputeTarget(workspace=ws, name=compute_name)
-
 training_env = Environment.get(workspace=ws, name='training_environment')
-
 estimator = Estimator(source_directory='experiment_folder',
                       entry_script='training_script.py',
                       environment_definition=training_env,
@@ -458,6 +447,7 @@ estimator = Estimator(source_directory='experiment_folder',
 Azure Machine Learning (Azure ML) is a cloud-based service for creating and managing machine learning solutions. It's designed to help data scientists leverage their existing data processing and model development skills and frameworks, and help them scale their workloads to the cloud. The Azure ML SDK for Python provides classes you can use to work with Azure ML in your Azure subscription.
 
 *Check the Azure ML SDK Version*
+
 Let's start by importing the azureml-core package and checking the version of the SDK that is installed.
 
 ```python
@@ -1049,7 +1039,7 @@ Azure Machine Learning includes a selection of pre-defined curated environments 
 
 Curated environments are registered in all Azure Machine Learning workspaces with a name that begins AzureML-.
 
-**> Note: You can't register your own environments with an “AzureML-” prefix. **
+**> Note:** You can't register your own environments with an *AzureML-* prefix.
 
 *Viewing Curated Environments*
 
