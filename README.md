@@ -1788,9 +1788,11 @@ You can also use the ExplanationClient object to download the explanation in Pyt
 ```python
 from azureml.contrib.interpret.explanation.explanation_client import ExplanationClient
 
-client = ExplanationClient.from_run_id(workspace=ws,
-                                       experiment_name=experiment.experiment_name,
-                                       run_id=run.id)
+client = ExplanationClient.from_run_id(
+workspace=ws,
+experiment_name=experiment.experiment_name,
+run_id=run.id
+)
 explanation = client.download_model_explanation()
 feature_importances = explanation.get_feature_importance_dict()
 ``` 
@@ -1801,25 +1803,29 @@ In some scenarios, you might want to generate explanations along with prediction
 The first step in this process is to create a scoring explainer as a wrapper for your model explainer, and register it in the same workspace as your model.
 ```python
 from interpret.ext.blackbox import TabularExplainer
-from azureml.interpret.scoring.scoring_explainer import KernelScoringExplainer, save
+from azureml.interpret.scoring.scoring_explainer import \
+KernelScoringExplainer, save
 from azureml.core import Model
 
 # Get a registered model
 loan_model - ws.models['loan_model']
 
-tab_explainer = TabularExplainer(model = loan_model,
-                             initialization_examples=X_test,
-                             features=['loan_amount','income','age','marital_status'],
-                             classes=['reject', 'approve'])
+tab_explainer = TabularExplainer(
+model = loan_model,
+initialization_examples=X_test,
+features=['loan_amount','income','age','marital_status'],
+classes=['reject', 'approve'])
 
 # Create and save a scoring explainer
 scoring_explainer = KernelScoringExplainer(tab_explainer, X_test[0:100])
 save(scoring_explainer, directory='explainer', exist_ok=True)
 
 # Register the explainer (like a model)
-Model.register(ws, model_name='loan_explainer', 'explainer/scoring_explainer.pkl')
+Model.register(ws, model_name='loan_explainer', 
+               'explainer/scoring_explainer.pkl')
 ```  
 *Create a Scoring Script to Include Explanations*
+
 After registering the explainer, you can create a scoring script for a real-time service that loads the explainer and uses it to return explanations along with predictions.
 ```python
 import json
@@ -1845,12 +1851,14 @@ def run(raw_data):
     # Get explanations
     importance_values = explainer.explain(data)
     # Return the predictions and explanations as JSON
-    return {"predictions":predictions.tolist(),"importance":importance_values}
+    return {"predictions":predictions.tolist(),
+           "importance":importance_values}
 ``` 
 *Deploy the Inferencing Service*
 With the scoring script created, you can deploy the service - referencing both the predictive model and the explainer.
 ```python
-service = Model.deploy(ws, 'loan-svc', [model, explainer], inf_config, dep_config)
+service = Model.deploy(ws, 'loan-svc', [model, explainer],
+                      inf_config, dep_config)
 ``` 
 *Retrieving Predictions and Explanations*
 When you consume the service, the JSON returned includes both the predictions and the associated local feature importance values:
@@ -1881,13 +1889,15 @@ automl_config = AutoMLConfig(name='Automated ML Experiment',
 ```
 
 *Viewing Automated Machine Learning Model Explanations*
+
 To view the explanations for the best model from an automated machine learning experiment, you can:
 * Open the experiment run in Azure Machine Learning studio, view the best model details, and review the Explanations tab.
 * Use the RunDetails widget to view an automated machine learning run in a Jupyter Notebook.
 * Use the ExplanationClient class in the SDK to download the model explanations from the run.
 
 ```python
-from azureml.contrib.interpret.explanation.explanation_client import ExplanationClient
+from azureml.contrib.interpret.explanation.explanation_client \
+import ExplanationClient
 
 # Get the best model (2nd item in outputs)
 best_run, fitted_model = automl_run.get_output()
@@ -1905,11 +1915,12 @@ feature_importances = explanation.get_feature_importance_dict()
 from azureml.core import Model
 
 # Register the model
-run.register_model(model_path='outputs/diabetes_model.pkl', 
-                   model_name='diabetes_model',
-                   tags={'Training context':'Parameterized SKLearn Estimator'},
-                   properties={'AUC': run.get_metrics()['AUC'], 
-                               'Accuracy': run.get_metrics()['Accuracy']})
+run.register_model(
+model_path='outputs/diabetes_model.pkl',
+model_name='diabetes_model',
+tags={'Training context':'Parameterized SKLearn Estimator'},
+properties={'AUC': run.get_metrics()['AUC'], 
+           'Accuracy': run.get_metrics()['Accuracy']})
 
 # List registered models
 for model in Model.list(ws):
@@ -1928,6 +1939,7 @@ Application Insights is an application performance management service in Microso
 To log telemetry in application insights from an Azure machine learning service, you must have an Application Insights resource associated with your Azure Machine Learning workspace, and you must configure your service to use it for telemetry logging.
 
 **Associating Application Insights with a Workspace**
+
 When you create an Azure Machine Learning workspace, you can select an Azure Application Insights resource to associate with it. If you do not select an existing Application Insights resource, a new one is created in the same resource group as your workspace.
 
 You can determine the Application Insights resource associated with your workspace by viewing the Overview page of the workspace blade in the Azure portal, or by using the get_details() method of a Workspace object:
@@ -1938,6 +1950,7 @@ ws = Workspace.from_config()
 ws.get_details()['applicationInsights']
 ``` 
 **Enabling Application Insights for a Service**
+
 When deploying a new real-time service, you can enable Application Insights in the deployment configuration for the service:
 ```python
 dep_config = AciWebservice.deploy_configuration(cpu_cores = 1,
@@ -1953,6 +1966,7 @@ service.update(enable_app_insights=True)
 Application Insights automatically captures any information written to the standard output and error logs, and provides a query capability to view data in these logs.
 
 **Writing Log Data**
+
 To capture telemetry data for Application insights, you can write any values to the standard output log in the scoring script for your service by using a print statement:
 ```python
 def init():
@@ -1969,6 +1983,7 @@ def run(raw_data):
 Azure Machine Learning creates a custom dimension in the Application Insights data model for the output you write.
 
 **Querying Logs in Application Insights**
+
 To analyze captured log data, you can use the Log Analytics query interface for Application Insights in the Azure portal. This interface supports a SQL-like query syntax that you can use to extract fields from logged data, including custom dimensions created by your Azure Machine Learning service.
 
 For example, the following query returns the timestamp and customDimensions.Content fields from log traces that have a message field value of STDOUT (indicating the data is in the standard output log) and a customDimensions.[“Service Name”] field value of my-svc:
@@ -1982,9 +1997,11 @@ traces
 
 #### 3.4.3 monitor data drift 
 **Creating a Data Drift Monitor**
+
 Azure Machine Learning supports data drift monitoring through the use of datasets. You can compare two registered datasets to detect data drift, or you can capture new feature data submitted to a deployed model service and compare it to the dataset with which the model was trained.
 
 *Monitoring Data Drift by Comparing Datasets*
+
 It's common for organizations to continue to collect new data after a model has been trained. For example, a health clinic might use diagnostic measurements from previous patients to train a model that predicts diabetes likelihood, but continue to collect the same diagnostic measurements from all new patients. The clinic's data scientists could then periodically compare the growing collection of new data to the original training data, and identify any changing data trends that might affect model accuracy.
 
 To monitor data drift using registered datasets, you need to register two datasets:
@@ -1994,34 +2011,42 @@ To monitor data drift using registered datasets, you need to register two datase
 After creating these datasets, you can define a dataset monitor to detect data drift and trigger alerts if the rate of drift exceeds a specified threshold. You can create dataset monitors using the visual interface in Azure Machine Learning studio, or by using the DataDriftDetector class in the Azure Machine Learning SDK:
 ```python
 from azureml.datadrift import DataDriftDetector
-monitor = DataDriftDetector.create_from_datasets(workspace=ws,
-                                                 name='dataset-drift-detector',
-                                                 baseline_data_set=train_ds,
-                                                 target_data_set=new_data_ds,
-                                                 compute_target='aml-cluster',
-                                                 frequency='Week',
-                                                 feature_list=['age','height', 'bmi'],
-                                                 latency=24)
+monitor = DataDriftDetector.create_from_datasets(
+workspace=ws,
+name='dataset-drift-detector',
+baseline_data_set=train_ds,
+target_data_set=new_data_ds,
+compute_target='aml-cluster',
+frequency='Week',
+feature_list=['age','height', 'bmi'],
+latency=24
+)
 ``` 
 After creating the dataset monitor, you can backfill to immediately compare the baseline dataset to existing data in the target dataset:
 ```python
 import datetime as dt
-backfill = monitor.backfill( dt.datetime.now() - dt.timedelta(weeks=6), dt.datetime.now())
+backfill = monitor.backfill(dt.datetime.now() - dt.timedelta(weeks=6),
+                            dt.datetime.now())
 ``` 
 More Information: For more information about monitoring datasets for data drift, see Detect data drift on datasets in the Azure Machine Learning documentation.
 
 *Monitoring Data Drift in Service Inference Data*
+
 If you have deployed a model as a real-time web service, you can capture new inferencing data as it is submitted, and compare it to the original training data to detect data drift. This is a little more complex to set up initially than using a dataset monitor, but has the benefit of automatically collecting new target data as the deployed model is used.
 
 *Register the Baseline Dataset with the Model*
+
 To monitor deployed models for data drift, you must include the training dataset in the model registration to provide a baseline for comparison:
 ```python
 from azureml.core import Model, Dataset
 
-model = Model.register(workspace=ws,model_path='./model/model.pkl', model_name='my_model',
+model = Model.register(workspace=ws,
+                       model_path='./model/model.pkl', 
+                       model_name='my_model',
                        datasets=[(Dataset.Scenario.TRAINING, train_ds)])
 ```  
-Enable Data Collection for the Deployed Model
+*Enable Data Collection for the Deployed Model*
+
 To collect inference data for comparison, you must enable data collection for services in which the model, is used. To do this, you must use the ModelDataCollector class in each service's scoring script, writing code to capture data and predictions and write them to the data collector (which will store the collected data in Azure blob storage):
 ```python
 from azureml.monitoring import ModelDataCollector
@@ -2055,18 +2080,21 @@ dep_config = AksWebservice.deploy_configuration(collect_model_data=True)
 ```  
 
 *Configure Data Drift Detection*
+
 Now that the baseline dataset is registered with the model, and the target data is being collected by deployed services, you can configure data drift monitoring by using a DataDriftDetector class:
 ```python
 from azureml.datadrift import DataDriftDetector, AlertConfiguration
 
 # create a new DataDriftDetector object for the deployed model
 model = ws.models['my_model']
-datadrift = DataDriftDetector.create_from_model(ws, model.name, model.version,
-                                     services=['my-svc'],
-                                     frequency="Week")
+datadrift = DataDriftDetector.create_from_model(ws, model.name, 
+                                                model.version,
+                                                services=['my-svc'],
+                                                frequency="Week")
 
+``` 
 The data drift detector will run at the specified frequency, but you can run it on-demand as an experiment:
-
+```python
 from azureml.core import Experiment, Run
 from azureml.widgets import RunDetails
 import datetime as dt
@@ -2084,39 +2112,46 @@ RunDetails(dd_run).show()
 ``` 
 
 **Data Drift Schedules and Alerts**
+
 When you define a data monitor, you specify a schedule on which it should run. Additionally, you can specify a threshold for the rate of data drift and an operator email address for notifications if this threshold is exceeded.
 
 *Configuring Data Drift Monitor Schedules*
+
 Data drift monitoring works by running a comparison at scheduled frequency, and calculating data drift metrics for the features in the dataset that you want to monitor. You can define a schedule to run every Day, Week, or Month.
 
 For dataset monitors, you can specify a latency, indicating the number of hours to allow for new data to be collected and added to the target dataset. For deployed model data drift monitors, you can specify a schedule_start time value to indicate when the data drift run should start (if omitted, the run will start at the current time).
 
 *Configuring Alerts*
+
 Data drift is measured using a calculated magnitude of change in the statistical distribution of feature values over time. You can expect some natural random variation between the baseline and target datasets, but you should monitor for large changes that might indicate significant data drift.
 
 You can define a threshold for data drift magnitude above which you want to be notified, and configure alert notifications by email.
 ```python
 alert_email AlertConfiguration('data_scientists@contoso.com')
-monitor = DataDriftDetector.create_from_datasets(ws, 'dataset-drift-detector',
-                                                 baseline_data_set, target_data_set,
-                                                 compute_target=cpu_cluster,
-                                                 frequency='Week', latency=2,
-                                                 drift_threshold=.3,
-                                                 alert_configuration=alert_email)
+monitor = DataDriftDetector.create_from_datasets(
+ws, 'dataset-drift-detector',
+baseline_data_set, target_data_set,
+compute_target=cpu_cluster,
+frequency='Week', latency=2, drift_threshold=.3,
+alert_configuration=alert_email
+)
 ``` 
 
 **Reviewing Data Drift**
+
 You can view the data drift metrics your monitor has collected in Azure Machine Learning studio.
 * To see data drift for datasets, view the Dataset monitors tab of the Datasets page.
 * To see data drift for a deployed model, open the model on the Models page and view its Data drift tab.
 
 *Data Drift Visualizations*
+
 Data drift visualizations for datasets and models include the overall data drift magnitude, and a measure of contribution to data drift for each feature.
 
 ## 4 Deploy and Consume Models (20-25%)
 ### 4.1 Create production compute targets
 #### 4.1.1 consider security for deployed services
 **Authentication**
+
 In production, you will likely want to restrict access to your services by applying authentication. There are two kinds of authentication you can use:
 * Key: Requests are authenticated by specifying the key associated with the service.
 * Token: Requests are authenticated by providing a JSON Web Token (JWT).
@@ -2167,6 +2202,7 @@ You can deploy a model as a real-time web service to several kinds of compute ta
 To deploy a model as a real-time inferencing service, you must perform the following tasks:
 
 *1. Register a trained model*
+
 After successfully training a model, you must register it in your Azure Machine Learning workspace. Your real-time service will then be able to load the model when required.
 
 To register a model from a local file, you can use the register method of the Model object as shown here:
@@ -2186,6 +2222,7 @@ run.register_model( model_name='classification_model',
 ``` 
 
 *2. Define an Inference Configuration*
+
 The model will be deployed as a service that consist of:
 * A script to load the model and return predictions for submitted data.
 * An environment in which the script will be run.
@@ -2193,6 +2230,7 @@ The model will be deployed as a service that consist of:
 You must therefore define the script and environment for the service.
 
 *Creating an Entry Script*
+
 Create the entry script (sometimes referred to as the scoring script) for the service as a Python (.py) file. It must include two functions:
 * init(): Called when the service is initialized.
 * run(raw_data): Called when new data is submitted to the service.
@@ -2222,6 +2260,7 @@ def run(raw_data):
 ``` 
 
 *Creating an Environment*
+
 Your service requires a Python environment in which to run the entry script, which you can configure using Conda configuration file. An easy way to create this file is to use a CondaDependencies class to create a default environment (which includes the azureml-defaults package and commonly-used packages like numpy and pandas), add any other required packages, and then serialize the environment to a string and save it:
 ```python
 from azureml.core.conda_dependencies import CondaDependencies
@@ -2238,6 +2277,7 @@ print("Saved dependency info in", env_file)
 ``` 
 
 *Combining the Script and Environment in an InferenceConfig*
+
 After creating the entry script and environment configuration file, you can combine them in an InferenceConfig for the service like this:
 ```python
 from azureml.core.model import InferenceConfig
@@ -2249,6 +2289,7 @@ classifier_inference_config = InferenceConfig(runtime= "python",
 ``` 
 
 *3. Define a Deployment Configuration*
+
 Now that you have the entry script and environment, you need to configure the compute to which the service will be deployed. If you are deploying to an AKS cluster, you must create the cluster and a compute target for it before deploying:
 ```python
 from azureml.core.compute import ComputeTarget, AksCompute
@@ -2262,7 +2303,8 @@ production_cluster.wait_for_completion(show_output=True)
 With the compute target created, you can now define the deployment configuration, which sets the target-specific compute specification for the containerized deployment:
 ```python
 from azureml.core.webservice import AksWebservice
-classifier_deploy_config = AksWebservice.deploy_configuration(cpu_cores = 1, memory_gb = 1)
+classifier_deploy_config = AksWebservice.deploy_configuration(
+cpu_cores = 1, memory_gb = 1)
 ```  
 
 The code to configure an ACI deployment is similar, except that you do not need to explicitly create an ACI compute target, and you must use the deploy_configuration class from the *azureml.core.webservice.AciWebservice* namespace. Similarly, you can use the *azureml.core.webservice.LocalWebservice namespace* to configure a local Docker-based service.
@@ -2270,6 +2312,7 @@ The code to configure an ACI deployment is similar, except that you do not need 
 **> Note:** To deploy a model to an Azure Function, you do not need to create a deployment configuration. Instead, you need to package the model based on the type of function trigger you want to use. This functionality is in preview at the time of writing. For more details, see Deploy a machine learning model to Azure Functions in the Azure Machine Learning documentation.
 
 *4. Deploy the Model*
+
 After all of the configuration is prepared, you can deploy the model. The easiest way to do this is to call the deploy method of the Model class, like this:
 ```python
 from azureml.core.model import Model
@@ -2356,6 +2399,7 @@ for i in range(len(x_new)):
 There are a lot of elements to a real-time service deployment, including the trained model, the runtime environment configuration, the scoring script, the container image, and the container host. Troubleshooting a failed deployment, or an error when consuming a deployed service can be complex.
 
 *Check the Service State*
+
 As an initial troubleshooting step, you can check the status of a service by examining its state:
 ```python
 from azureml.core.webservice import AksWebservice
@@ -2365,19 +2409,21 @@ service = AciWebservice(name='classifier-service', workspace=ws)
 
 # Check its state
 print(service.state)
-
-Note: To view the state of a service, you must use the compute-specific service type (for example AksWebservice) and not a generic WebService object.
+``` 
+**>Note:** To view the state of a service, you must use the compute-specific service type (for example AksWebservice) and not a generic WebService object.
 
 For an operational service, the state should be Healthy.
 
-Review Service Logs
-If a service is not healthy, or you are experiencing errors when using it, you can review its logs:
+*Review Service Logs*
 
+If a service is not healthy, or you are experiencing errors when using it, you can review its logs:
+```python
 print(service.get_logs())
 ``` 
 The logs include detailed information about the provisioning of the service, and the requests it has processed; and can often provide an insight into the cause of unexpected errors.
 
 *Deploy to a Local Container*
+
 Deployment and runtime errors can be easier to diagnose by deploying the service as a container in a local Docker instance, like this:
 ```python
 from azureml.core.webservice import LocalWebservice
@@ -2394,6 +2440,7 @@ You can then troubleshoot runtime issues by making changes to the scoring file t
 service.reload()
 print(service.run(input_data = json_data))
 ``` 
+
 ### 4.3 Create a pipeline for batch inferencing
 In many production scenarios, long-running tasks that operate on large volumes of data are performed as batch operations. In machine learning, batch inferencing is used to apply a predictive model to multiple cases asynchronously - usually writing the results to a file or database.
 
@@ -2402,22 +2449,24 @@ In Azure Machine Learning, you can implement batch inferencing solutions by crea
 #### 4.3.1 publish a batch inferencing pipeline
 Just like any pipeline, you can publish a batch inferencing pipeline as a REST service:
 ```python
-published_pipeline = pipeline_run.publish_pipeline(name='Batch_Prediction_Pipeline',
-                                                   description='Batch pipeline',
-                                                   version='1.0')
+published_pipeline = pipeline_run.publish_pipeline(
+name='Batch_Prediction_Pipeline',
+description='Batch pipeline',
+version='1.0'
+)
 rest_endpoint = published_pipeline.endpoint
-
+``` 
 Once published, you can use the service endpoint to initiate a batch inferencing job:
-
+```python
 import requests
 
 response = requests.post(rest_endpoint,
                          headers=auth_header,
                          json={"ExperimentName": "Batch_Prediction"})
 run_id = response.json()["Id"]
-
+``` 
 You can also schedule the published pipeline to have it run automatically:
-
+```python
 from azureml.pipeline.core import ScheduleRecurrence, Schedule
 
 weekly = ScheduleRecurrence(frequency='Week', interval=1)
@@ -2431,6 +2480,7 @@ pipeline_schedule = Schedule.create(ws, name='Weekly Predictions',
 To create a batch inferencing pipeline, perform the following tasks:
 
 1. Register the Model
+
 Just as with a real-time inferencing service, to use a trained model in a batch inferencing pipeline, you must register it in your Azure Machine Learning workspace.
 
 To register a model from a local file, you can use the register method of the Model object as shown here:
@@ -2444,19 +2494,19 @@ classification_model = Model.register(workspace=ws,
 ``` 
 Alternatively, if you have a reference to the *Run* used to train the model, you can use its register_model method as shown here:
 ```python
-run.register_model( model_name='classification_model',
-                    model_path='outputs/model.pkl', # run outputs path
-                    description='A classification model')
+run.register_model(model_name='classification_model',
+                   model_path='outputs/model.pkl', # run outputs path
+                   description='A classification model'
+                   )
 ``` 
 
 2. Create an Scoring Script
+
 Just like a real-time inferencing service, a batch inferencing service requires a scoring script to load the model and use it to predict new values. It must include two functions:
-
 * init(): Called when the pipeline is initialized.
-
 * run(mini_batch): Called for each batch of data to be processed.
 
-Typically, you use the init function to load the model from the model registry, and use the run function to generate predictions from each batch of data and return the results. The following example script shows this pattern:
+Typically, you use the `init` function to load the model from the model registry, and use the `run` function to generate predictions from each batch of data and return the results. The following example script shows this pattern:
 ```python
 import os
 import numpy as np
@@ -2482,11 +2532,14 @@ def run(mini_batch):
         # Reshape into a 2-dimensional array for model input
         prediction = model.predict(data.reshape(1, -1))
         # Append prediction to results
-        resultList.append("{}: {}".format(os.path.basename(f), prediction[0]))
+        resultList.append("{}: {}".format(os.path.basename(f), 
+                                          prediction[0]))
     return resultList
 ``` 
-3. Create a Pipeline with a ParallelRunStep
-Azure Machine Learning provides a type of pipeline step specifically for performing parallel batch inferencing. Using the ParallelRunStep class, you can read batches of files from a File dataset and write the processing output to a PipelinePata reference. Additionally, you can set the output_action setting for the step to “append_row”, which will ensure that all instances of the step being run in parallel will collate their results to a single output file named parallel_run_step.txt:
+
+3. Create a Pipeline with a `ParallelRunStep`
+
+Azure Machine Learning provides a type of pipeline step specifically for performing parallel batch inferencing. Using the `ParallelRunStep` class, you can read batches of files from a File dataset and write the processing output to a `PipelineData` reference. Additionally, you can set the `output_action` setting for the step to “append_row”, which will ensure that all instances of the step being run in parallel will collate their results to a single output file named parallel_run_step.txt:
 ```python
 from azureml.pipeline.steps import ParallelRunConfig, ParallelRunStep
 from azureml.pipeline.core import PipelineData
@@ -2525,12 +2578,13 @@ parallelrun_step = ParallelRunStep(
 pipeline = Pipeline(workspace=ws, steps=[parallelrun_step])
 ``` 
 4. Run the pipeline and Retrieve the Step Output
+
 After your pipeline has been defined, you can run it and wait for it to complete. Then you can retrieve the parallel_run_step.txt file from the output of the step to view the results.
 ```python
 from azureml.core import Experiment
 
 # Run the pipeline as an experiment
-pipeline_run = Experiment(ws, 'batch_prediction_pipeline').submit(pipeline)
+pipeline_run = Experiment(ws,'batch_prediction_pipeline').submit(pipeline)
 pipeline_run.wait_for_completion(show_output=True)
 
 # Get the outputs from the first (and only) step
@@ -2565,6 +2619,7 @@ The trained model is encapsulated in a dataset, removing the algorithm and model
 A Web service output containing the scored results is added at the end of real-time inferencing pipelines to define the output returned to applications consuming the service.
 
 **Modifying the Inference Pipeline**
+
 Before deploying an inference pipeline as a web service, you may want to make some changes to it. For example:
 
 For supervised learning models, consider replacing the training dataset at the beginning of the pipeline with an alternative data definition that does not include the label column. This has the effect of removing the label column from the web service input schema, which is more intuitive for client application developers (who would otherwise need to submit a value for the label that they want the model to predict).
@@ -2601,10 +2656,12 @@ import ssl
 
 def allowSelfSignedHttps(allowed):
     # bypass the server certificate verification on client side
-    if allowed and not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None):
+    if allowed and not os.environ.get('PYTHONHTTPSVERIFY', '') \
+       and getattr(ssl, '_create_unverified_context', None):
         ssl._create_default_https_context = ssl._create_unverified_context
 
-allowSelfSignedHttps(True) # this line is needed if you use self-signed certificate in your scoring service.
+allowSelfSignedHttps(True) 
+# this line is needed if you use self-signed certificate in your scoring service.
 
 data = {
     "Inputs": {
@@ -2631,7 +2688,8 @@ body = str.encode(json.dumps(data))
 
 url = 'http://10.0.0.1:80/api/v1/service/diabetes_predictor/score'
 api_key = 'a1234567890x' # Replace this with the API key for the web service
-headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ api_key)}
+headers = {'Content-Type':'application/json', 
+           'Authorization':('Bearer '+ api_key)}
 
 req = urllib.request.Request(url, body, headers)
 
@@ -2643,7 +2701,8 @@ try:
 except urllib.error.HTTPError as error:
     print("The request failed with status code: " + str(error.code))
 
-    # Print the headers - they include the requert ID and the timestamp, which are useful for debugging the failure
+    # Print the headers - they include the requert ID and the timestamp, 
+    # which are useful for debugging the failure
     print(error.info())
     print(json.loads(error.read().decode("utf8", 'ignore')))
 ```
