@@ -135,11 +135,11 @@ from azureml.core import Workspace, Datastore
 ws = Workspace.from_config()
 
 # Register a new datastore
-blob_ds = Datastore.register_azure_blob_container(workspace=ws,
-                                                  datastore_name='blob_data',
-                                                  container_name='data_container',
-                                                  account_name='az_store_acct',
-                                                  account_key='123456abcde789…')
+blob_ds = Datastore.register_azure_blob_container(
+workspace=ws, datastore_name='blob_data',
+container_name='data_container',
+account_name='az_store_acct',
+account_key='123456abcde789…')
  ``` 
 
 *Managing Datastores*
@@ -264,7 +264,8 @@ To create a file dataset using the SDK, use the from_files method of the Dataset
 from azureml.core import Dataset
 
 blob_ds = ws.get_default_datastore()
-file_ds = Dataset.File.from_files(path=(blob_ds, 'data/files/images/*.jpg'))
+file_ds = Dataset.File.from_files(path=(blob_ds, 
+                                        'data/files/images/*.jpg'))
 file_ds = file_ds.register(workspace=ws, name='img_files')
 ``` 
 
@@ -319,7 +320,7 @@ for file_path in ds2.to_path():
 #### 1.3.3 create compute targets for experiments and training
 The most common ways to create or attach a compute target are to use the Compute page in Azure Machine Learning studio, or to use the Azure Machine Learning SDK to provision compute targets in code. Additionally, you can create compute targets using the Azure Machine Learning extension in Visual Studio Code, or by using the Azure command line interface (CLI) extension for Azure Machine Learning.
 
-**Creating a Managed Compute Target with the SDK*3
+**Creating a Managed Compute Target with the SDK**
 A managed compute target is one that is managed by Azure Machine Learning, such as an Azure Machine Learning training cluster.
 
 To create an Azure Machine Learning compute cluster compute target, use the azureml.core.compute.ComputeTarget class and the AmlCompute class, like this:
@@ -334,9 +335,9 @@ ws = Workspace.from_config()
 compute_name = 'aml-cluster'
 
 # Define compute configuration
-compute_config = AmlCompute.provisioning_configuration(vm_size='STANDARD_DS12_V2',
-                                                       min_nodes=0, max_nodes=4,
-                                                       vm_priority='dedicated')
+compute_config = AmlCompute.provisioning_configuration(
+vm_size='STANDARD_DS12_V2', min_nodes=0, max_nodes=4, vm_priority='dedicated'
+)
 
 # Create the compute
 aml_cluster = ComputeTarget.create(ws, compute_name, compute_config)
@@ -367,15 +368,16 @@ compute_name = 'db_cluster'
 db_workspace_name = 'db_workspace'
 db_resource_group = 'db_resource_group'
 db_access_token = '1234-abc-5678-defg-90...'
-db_config = DatabricksCompute.attach_configuration(resource_group=db_resource_group,
-                                                   workspace_name=db_workspace_name,
-                                                   access_token=db_access_token)
+db_config = DatabricksCompute.attach_configuration(
+resource_group=db_resource_group,
+workspace_name=db_workspace_name,
+access_token=db_access_token)
 
 # Create the compute
 databricks_compute = ComputeTarget.attach(ws, compute_name, db_config)
 databricks_compute.wait_for_completion(True)
 ``` 
-Checking for an Existing Compute Target
+*Checking for an Existing Compute Target*
 In many cases, you will want to check for the existence of a compute target, and only create a new one if there isn't already one with the specified name. To accomplish this, you can catch the ComputeTargetException exception, like this:
 ```python
 from azureml.core.compute import ComputeTarget, AmlCompute
@@ -399,6 +401,7 @@ aml_cluster.wait_for_completion(show_output=True)
 More Information: For more information about creating compute targets, see Set up and use compute targets for model training in the Azure Machine Learning documentation.
 
 **Using Compute Targets**
+
 After you've created or attached compute targets in your workspace, you can use them to run specific workloads; such as experiments.
 
 To use a particular compute target, you can specify it in the appropriate parameter for an experiment run configuration or estimator. For example, the following code configures an estimator to use the compute target named aml-cluster:
@@ -407,9 +410,7 @@ from azureml.core import Environment
 from azureml.train.estimator import Estimator
 
 compute_name = 'aml-cluster'
-
 training_env = Environment.get(workspace=ws, name='training_environment')
-
 estimator = Estimator(source_directory='experiment_folder',
                       entry_script='training_script.py',
                       environment_definition=training_env,
@@ -439,7 +440,7 @@ estimator = Estimator(source_directory='experiment_folder',
 ### --- Introduction Azure ML SDK --- ###
 Azure Machine Learning (Azure ML) is a cloud-based service for creating and managing machine learning solutions. It's designed to help data scientists leverage their existing data processing and model development skills and frameworks, and help them scale their workloads to the cloud. The Azure ML SDK for Python provides classes you can use to work with Azure ML in your Azure subscription.
 
-Check the Azure ML SDK Version
+*Check the Azure ML SDK Version*
 Let's start by importing the azureml-core package and checking the version of the SDK that is installed.
 
 ```python
@@ -502,6 +503,7 @@ With the data flow steps defined, you're now ready to run the training pipeline 
 In Azure Machine Learning, an experiment is a named process, usually the running of a script or a pipeline, that can generate metrics and outputs and be tracked in the Azure Machine Learning workspace. An experiment can be run multiple times, with different data, code, or settings; and Azure Machine Learning tracks each run, enabling you to view run history and compare results for each run.
 
 **The Experiment Run Context**
+
 When you submit an experiment, you use its run context to initialize and end the experiment run that is tracked in Azure Machine Learning, as shown in the following code sample:
 ```python
 from azureml.core import Experiment
@@ -543,7 +545,8 @@ print(diabetic_counts)
 for k, v in diabetic_counts.items():
     run.log('Label:' + str(k), v)
       
-# Save a sample of the data in the outputs folder (which gets uploaded automatically)
+# Save a sample of the data in the outputs folder 
+# (which gets uploaded automatically)
 os.makedirs('outputs', exist_ok=True)
 data.sample(100).to_csv("outputs/sample.csv", index=False, header=True)
 
@@ -553,12 +556,12 @@ run.complete()
 
 This code is a simplified version of the inline code used before. However, note the following:
 
-It uses the Run.get_context() method to retrieve the experiment run context when the script is run.
+It uses the `Run.get_context()` method to retrieve the experiment run context when the script is run.
 It loads the diabetes data from the folder where the script is located.
 It creates a folder named outputs and writes the sample file to it - this folder is automatically uploaded to the experiment run
-Now you're almost ready to run the experiment. To run the script, you must create a ScriptRunConfig that identifies the Python script file to be run in the experiment, and then run an experiment based on it.
+Now you're almost ready to run the experiment. To run the script, you must create a `ScriptRunConfig` that identifies the Python script file to be run in the experiment, and then run an experiment based on it.
 
-Note: The ScriptRunConfig also determines the compute target and Python environment. If you don't specify these, a default environment is created automatically on the local compute where the code is being run (in this case, where this notebook is being run).
+Note: The `ScriptRunConfig` also determines the compute target and Python environment. If you don't specify these, a default environment is created automatically on the local compute where the code is being run (in this case, where this notebook is being run).
 
 The following cell configures and submits the script-based experiment:
 ```python
@@ -606,12 +609,14 @@ print('Ready to use Azure ML {} to work with {}'.format(azureml.core.VERSION, ws
 from azureml.core import Datastore
 default_ds = ws.get_default_datastore() # get default datastore
 
-for ds_name in ws.datastores: # enumerate all datastores, indicating which is the default
+for ds_name in ws.datastores: 
+# enumerate all datastores, indicating which is the default
     print(ds_name, "- Default =", ds_name == default_ds.name)
 
 # Get a Datastore to Work With
 aml_datastore = Datastore.get(ws, 'aml_data')
-print(aml_datastore.name,":", aml_datastore.datastore_type + " (" + aml_datastore.account_name + ")")
+print(aml_datastore.name,":", 
+aml_datastore.datastore_type + " (" + aml_datastore.account_name + ")")
 
 # Set the Default Datastore (for convenience)
 ws.set_default_datastore('aml_data')
@@ -619,11 +624,11 @@ default_ds = ws.get_default_datastore()
 print(default_ds.name)
 
 # Upload Data to a Datastore
-default_ds.upload_files(files=['./data/diabetes.csv', './data/diabetes2.csv'], # Upload the diabetes csv files in /data
-                       target_path='diabetes-data/', # Put it in a folder path in the datastore
-                       overwrite=True, # Replace existing files of the same name
-                       show_progress=True)
-                       
+default_ds.upload_files(
+files=['./data/diabetes.csv', './data/diabetes2.csv'], # Upload the diabetes csv files in /data
+target_path='diabetes-data/', # Put it in a folder path in the datastore
+overwrite=True, # Replace existing files of the same name
+show_progress=True)                     
 ``` 
 
 #### 2.2.3 consume data from a dataset in an experiment by using the Azure Machine Learning SDK
@@ -672,6 +677,7 @@ When a file dataset is passed to the estimator, a mount point from which the scr
 - When running on local compute though, you need to use the *as_download* option to download the dataset files to a local folder.
 
 **Dataset Versioning**
+
 Datasets can be versioned, enabling you to track historical versions of datasets that were used in experiments, and reproduce those experiments with data in the same state.
 
 *Creating a New Version of a Dataset*
@@ -680,13 +686,16 @@ You can create a new version of a dataset by registering it with the same name a
 img_paths = [(blob_ds, 'data/files/images/*.jpg'),
              (blob_ds, 'data/files/images/*.png')]
 file_ds = Dataset.File.from_files(path=img_paths)
-file_ds = file_ds.register(workspace=ws, name='img_files', create_new_version=True)
+file_ds = file_ds.register(
+workspace=ws, name='img_files', 
+create_new_version=True
+)
 ``` 
 
-In this example, the .png files in the images folder have been added to the definition of the img_paths dataset example used in the previous topic.
+In this example, the .png files in the images folder have been added to the definition of the `img_paths` dataset example used in the previous topic.
 
 *Retrieving a Specific Dataset version*
-You can retrieve a specific version of a dataset by specifying the version parameter in the get_by_name method of the Dataset class.
+You can retrieve a specific version of a dataset by specifying the version parameter in the `get_by_name` method of the Dataset class.
 ```python 
 img_ds = Dataset.get_by_name(workspace=ws, name='img_files', version=2)
 ``` 
@@ -713,10 +722,14 @@ print("Loading Data...")
 diabetes = pd.read_csv('diabetes.csv')
 
 # Separate features and labels
-X, y = diabetes[['Pregnancies','PlasmaGlucose','DiastolicBloodPressure','TricepsThickness','SerumInsulin','BMI','DiabetesPedigree','Age']].values, diabetes['Diabetic'].values
+X, y = diabetes[['Pregnancies','PlasmaGlucose','DiastolicBloodPressure',
+'TricepsThickness','SerumInsulin','BMI',
+'DiabetesPedigree','Age']].values, diabetes['Diabetic'].values
 
 # Split data into training set and test set
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y, 
+                                                    test_size=0.30, 
+                                                    random_state=0)
 
 # Set regularization hyperparameter
 reg = 0.01
@@ -724,7 +737,8 @@ reg = 0.01
 # Train a logistic regression model
 print('Training a logistic regression model with regularization rate of', reg)
 run.log('Regularization Rate',  np.float(reg))
-model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, y_train)
+model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, 
+                                                            y_train)
 
 # calculate accuracy
 y_hat = model.predict(X_test)
@@ -766,6 +780,7 @@ run.wait_for_completion(show_output=True)
 ``` 
 
 **Use a Framework-Specific Estimator**
+
 You used a generic Estimator class to run the training script, but you can also take advantage of framework-specific estimators that include environment definitions for common machine learning frameworks. In this case, you're using Scikit-Learn, so you can use the SKLearn estimator. This means that you don't need to specify the scikit-learn package in the configuration.
 ```python
 from azureml.train.sklearn import SKLearn
@@ -808,7 +823,8 @@ run.log_list('pregnancy categories', data.Pregnancies.unique())
 * **log_row**: Record a row with multiple columns.
 ```python
 # Log summary statistics for numeric columns
-med_columns = ['PlasmaGlucose', 'DiastolicBloodPressure', 'TricepsThickness', 'SerumInsulin', 'BMI']
+med_columns = ['PlasmaGlucose', 'DiastolicBloodPressure', 
+              'TricepsThickness', 'SerumInsulin', 'BMI']
 summary_stats = data[med_columns].describe().to_dict()
 for col in summary_stats:
     keys = list(summary_stats[col].keys())
@@ -855,11 +871,13 @@ run.complete()
 ```
 
 **Logging with ML Flow**
+
 ML Flow is an Open Source library for managing machine learning experiments, and includes a tracking component for logging. If your organization already includes ML Flow, you can continue to use it to track metrics in Azure Machine Learning.
 
 More Information: For more information about using ML Flow with Azure Machine Learning, see Track metrics and deploy models with MLflow and Azure Machine Learning in the documentation.
 
 **Retrieving and Viewing Logged Metrics**
+
 You can view the metrics logged by an experiment run in Azure Machine Learning studio or by using the RunDetails widget in a notebook, as shown here:
 ```python
 from azureml.widgets import RunDetails
@@ -920,6 +938,7 @@ In an enterprise machine learning solution, where experiments may be run in a va
 You can have Azure Machine Learning manage environment creation and package installation to define an environment, and then register it for reuse. Alternatively, you can manage your own environments and register them. This makes it possible to define consistent, reusable runtime contexts for your experiments - regardless of where the experiment script is run.
 
 **Creating an Environment from a Specification File**
+
 You can use a Conda or pip specification file to define the packages required in a Python evironment, and use it to create an Environment object.
 
 For example, you could save the following Conda configuration settings in a file named conda.yml:
@@ -942,6 +961,7 @@ env = Environment.from_conda_specification(name='training_environment',
 ``` 
 
 **Creating an Environment from an Existing Conda Environment**
+
 If you have an existing Conda environment defined on your workstation, you can use it to define an Azure Machine Learning environment:
 ```python
 from azureml.core import Environment
@@ -951,7 +971,8 @@ env = Environment.from_existing_conda_environment(name='training_environment',
 ``` 
 
 **Creating an Environment by Specifying Packages**
-You can define an environment by specifying the Conda and pip packages you need in a CondaDependencies object, like this:
+
+You can define an environment by specifying the conda and pip packages you need in a CondaDependencies object, like this:
 ```python 
 from azureml.core import Environment
 from azureml.core.conda_dependencies import CondaDependencies
@@ -969,6 +990,7 @@ env.python.conda_dependencies = deps
 After you've created an environment, you can register it in your workspace and reuse it for future experiments that have the same Python dependencies.
 
 **Registering an Environment**
+
 Use the register method of an Environment object to register an environment:
 ```python
 env.register(workspace=ws)
@@ -984,6 +1006,7 @@ for env_name in env_names:
 ``` 
 
 **Retrieving and using an Environment**
+
 You can retrieve a registered environment by using the get method of the Environment class, and then assign it to a ScriptRunConfig or Estimator.
 For example, the following code sample retrieves the training_environment registered environment, and assigns it to an estimator:
 ```python
@@ -1020,6 +1043,7 @@ for env in envs:
 
 ### 2.4 Automate the model training process
 **What is a Pipeline?**
+
 In Azure Machine Learning, a pipeline is a workflow of machine learning tasks in which each task is implemented as a step.
 
 **> Note:** The term pipeline is used extensively in machine learning, often with different meanings. For example, in Scikit-Learn, you can define pipelines that combine data preprocessing transformations with a training algorithm; and in Azure DevOps, you can define a build or release pipeline to perform the build and configuration tasks required to deliver software. The focus of this module is on Azure Machine Learning pipelines, which encapsulate steps that can be run as an experiment. However, bear in mind that it's perfectly feasible to have an Azure DevOps pipeline with a task that that initiates an Azure Machine Learning pipeline, which in turn includes a step that trains a model based on a Scikit-Learn pipeline!
@@ -1027,17 +1051,21 @@ In Azure Machine Learning, a pipeline is a workflow of machine learning tasks in
 Steps can be arranged sequentially or in parallel, enabling you to build sophisticated flow logic to orchestrate machine learning operations. Each step can be run on a specific compute target, making it possible to combine different types of processing as required to achieve an overall goal.
 
 *Pipelines as Executable Processes*
+
 A pipeline can be executed as a process by running the pipeline as an experiment. Each step in the pipeline runs on its allocated compute target as part of the overall experiment run.
 
 You can publish a pipeline as a REST endpoint, enabling client applications to initiate a pipeline run. You can also define a schedule for a pipeline, and have it run automatically at periodic intervals.
 
 *Pipelines and DevOps for Machine Learning*
+
 As machine learning becomes increasingly ubiquitous in the enterprise, IT organizations are finding a need to integrate model training, management, and deployment into their standard development/operations (DevOps) practices through automation and policy-based release management. The implementation of a continuous integration/continuous delivery (CI/CD) solution for machine learning models is often referred to as “MLOps”, and pipelines are a core element of this.
 #### 2.4.1 create a pipeline by using the SDK
 **Pipeline Steps**
+
 An Azure Machine Learning pipeline consists of one or more steps that perform tasks. There are many kinds of step supported by Azure Machine Learning pipelines, each with its own specialized purpose and configuration options.
 
 *Types of Step*
+
 Common kinds of step in an Azure Machine Learning pipeline include:
 
 * PythonScriptStep: Runs a specified Python script.
@@ -1117,7 +1145,8 @@ step2 = EstimatorStep(name = 'train model',
                       # Specify PipelineData as input
                       inputs=[prepped_data],
                       # Pass as data reference to estimator script
-                      estimator_entry_script_arguments=['--folder', prepped_data])
+                      estimator_entry_script_arguments=['--folder', 
+                                                       prepped_data])
  ``` 
 
 By default the step output from a previous pipeline run is reused without re-running the step as long as the script, source directory, and other parameters for the step have not changed. To change that include `allow_reuse=False` as argument to the step.
@@ -1170,9 +1199,11 @@ pipeline_run = experiment.submit(train_pipeline, regenerate_outputs=True)
 After you have created a pipeline, you can publish it to create a REST endpoint through which the pipeline can be run on demand.
 To publish a pipeline, you can call its publish method, as shown here:
 ```python
-published_pipeline = pipeline.publish(name='training_pipeline',
-                                          description='Model training pipeline',
-                                          version='1.0')
+published_pipeline = pipeline.publish(
+name='training_pipeline',
+description='Model training pipeline',
+version='1.0'
+)
 ``` 
 
 Alternatively, you can call the publish method on a successful run of the pipeline:
@@ -1182,17 +1213,21 @@ pipeline_experiment = ws.experiments.get('training-pipeline')
 run = list(pipeline_experiment.get_runs())[0]
 
 # Publish the pipeline from the run
-published_pipeline = run.publish_pipeline(name='training_pipeline',
-                                          description='Model training pipeline',
-                                          version='1.0')
+published_pipeline = run.publish_pipeline(
+name='training_pipeline',
+description='Model training pipeline',
+version='1.0'
+)
+```
 
 After the pipeline has been published, you can view it in Azure Machine Learning studio. You can also determine the URI of its endpoint like this:
-
+```python
 rest_endpoint = published_pipeline.endpoint
 print(rest_endpoint)
 ``` 
 
 **Using a Published Pipeline**
+
 To initiate a published endpoint, you make an HTTP request to its REST endpoint, passing an authorization header with a token for a service principal with permission to run the pipeline, and a JSON payload specifying the experiment name. The pipeline is run asynchronously, so the response from a successful REST call includes the run ID. You can use this to track the run in Azure Machine Learning studio.
 
 For example, the following Python code makes a REST request to run a pipeline and displays the returned run ID.
@@ -1213,7 +1248,8 @@ print(run_id)
 ``` 
 
 **Defining Parameters for a Pipeline**
-You can increase the flexibility of a pipeline by defining parameters. To define parameters for a pipeline, create a PipelineParameter object for each parameter, and specify each parameter in at least one step.
+
+You can increase the flexibility of a pipeline by defining parameters. To define parameters for a pipeline, create a `PipelineParameter` object for each parameter, and specify each parameter in at least one step.
 
 For example, you could use the following code to include a parameter for a regularization rate in the script used by an estimator:
 ```python
@@ -1222,17 +1258,19 @@ reg_param = PipelineParameter(name='reg_rate', default_value=0.01)
 
 ...
 
-step2 = EstimatorStep(name = 'train model',
-                      estimator = sk_estimator,
-                      compute_target = 'aml-cluster',
-                      inputs=[prepped],
-                      estimator_entry_script_arguments=['--folder', prepped,
-                                                        '--reg', reg_param])
+step2 = EstimatorStep(
+name = 'train model',
+estimator = sk_estimator,
+compute_target = 'aml-cluster',
+inputs=[prepped],
+estimator_entry_script_arguments=['--folder', prepped,
+                                 '--reg', reg_param])
 ``` 
 
 Note: You must define parameters for a pipeline before publishing it.
 
 *Running a Pipeline with a Parameter*
+
 After you publish a parameterized pipeline, you can pass parameter values in the JSON payload for the REST interface:
 ```python
 response = requests.post(rest_endpoint,
@@ -1242,31 +1280,35 @@ response = requests.post(rest_endpoint,
 ``` 
 
 *Scheduling a Pipeline*
+
 After you have published a pipeline, you can initiate it on demand through its REST endpoint, or you can have the pipeline run automatically based on a periodic schedule or in response to data updates. To schedule a pipeline to run at periodic intervals, you must define a ScheduleRecurrance that determines the run frequency, and use it to create a Schedule.
 For example, the following code schedules a daily run of a published pipeline:
 ```python
 from azureml.pipeline.core import ScheduleRecurrence, Schedule
-
 daily = ScheduleRecurrence(frequency='Day', interval=1)
-pipeline_schedule = Schedule.create(ws, name='Daily Training',
-                                        description='trains model every day',
-                                        pipeline_id=published_pipeline.id,
-                                        experiment_name='Training_Pipeline',
-                                        recurrence=daily)
+pipeline_schedule = Schedule.create(
+ws, name='Daily Training',
+description='trains model every day',
+pipeline_id=published_pipeline.id,
+experiment_name='Training_Pipeline',
+recurrence=daily
+)
 ``` 
 *Triggering a Pipeline Run on Data Changes*
+
 To schedule a pipeline to run whenever data changes, you must create a Schedule that monitors a specified path on a datastore, like this:
 ```python
 from azureml.core import Datastore
 from azureml.pipeline.core import Schedule
-
 training_datastore = Datastore(workspace=ws, name='blob_data')
-pipeline_schedule = Schedule.create(ws, name='Reactive Training',
-                                    description='trains model on data change',
-                                    pipeline_id=published_pipeline_id,
-                                    experiment_name='Training_Pipeline',
-                                    datastore=training_datastore,
-                                    path_on_datastore='data/training')
+pipeline_schedule = Schedule.create(
+ws, name='Reactive Training',
+description='trains model on data change',
+pipeline_id=published_pipeline_id,
+experiment_name='Training_Pipeline',
+datastore=training_datastore,
+path_on_datastore='data/training'
+)
  ```
 
 ## 3 Optimize and Manage Models (20-25%)
@@ -1300,6 +1342,7 @@ get_primary_metrics('classification')
 More Information: You can find a full list of primary metrics and their definitions in https://docs.microsoft.com/en-us/azure/machine-learning/how-to-understand-automated-ml.
 
 **Submitting an Automated Machine Learning Experiment**
+
 You can submit an automated machine learning experiment like any other SDK-based experiment:
 ```python
 from azureml.core.experiment import Experiment
@@ -1310,9 +1353,11 @@ automl_run = automl_experiment.submit(automl_config)
 In addition to trying a selection of algorithms, automated machine learning can apply preprocessing transformations to your data, which may improve the performance of a model trained on the featurized data.
 
 **Scaling and Normalization**
+
 Automated machine learning applies scaling and normalization to numeric data automatically. This helps prevent any large scale features from dominating training. During an automated machine learning experiment, a variety of scaling or normalization techniques will be applied.
 
 **Optional Featurization**
+
 You can choose to have automated machine learning apply preprocessing transformations such as:
 * Missing value imputation to eliminate nulls in the training dataset.
 * Categorical encoding to convert categorical features to numeric indicators.
@@ -1331,39 +1376,40 @@ You can use automated machine learning in Azure Machine Learning to train models
 Azure Machine Learning includes support for numerous commonly used algorithms for these tasks, including:
 
 * Classification Algorithms
-** Logistic Regression
-** Light Gradient Boosting Machine (GBM)
-** Decision Tree
-** Random Forest
-** Naive Bayes
-** Linear Support Vector Machine (SVM)
-** XGBoost
-** Deep Neural Network (DNN) Classifier
-** Others…
+    * Logistic Regression
+    * Light Gradient Boosting Machine (GBM)
+    ** Decision Tree
+    ** Random Forest
+    ** Naive Bayes
+    ** Linear Support Vector Machine (SVM)
+    ** XGBoost
+    ** Deep Neural Network (DNN) Classifier
+    ** Others…
 
 * Regression Algorithms
-** Linear Regression
-** Light Gradient Boosting Machine (GBM)
-** Decision Tree
-** Random Forest
-** Elastic Net
-** LARS Lasso
-** XGBoost
-** Others…
+    ** Linear Regression
+    ** Light Gradient Boosting Machine (GBM)
+    ** Decision Tree
+    ** Random Forest
+    ** Elastic Net
+    ** LARS Lasso
+    ** XGBoost
+    ** Others…
 
 * Forecasting Algorithms
-** Linear Regression
-** Light Gradient Boosting Machine (GBM)
-** Decision Tree
-** Random Forest
-** Elastic Net
-** LARS Lasso
-** XGBoost
-** Others…
+    ** Linear Regression
+    ** Light Gradient Boosting Machine (GBM)
+    ** Decision Tree
+    ** Random Forest
+    ** Elastic Net
+    ** LARS Lasso
+    ** XGBoost
+    ** Others…
 
 More Information: For a full list of supported algorithms, see https://docs.microsoft.com/en-us/azure/machine-learning/concept-automated-ml.
 
 **Restricting Algorithm Selection**
+
 By default, automated machine learning will randomly select from the full range of algorithms for the specified task. You can choose to block individual algorithms from being selected; which can be useful if you know that your data is not suited to a particular type of algorithm, or you have to comply with a policy that restricts the type of machine learning algorithms you can use in your organization.
 
 #### 3.1.5 define a primary metric
@@ -1372,6 +1418,7 @@ By default, automated machine learning will randomly select from the full range 
 You can monitor automated machine learning experiment runs in Azure Machine Learning studio, or in the Jupyter Notebooks RunDetails widget.
 
 *Retrieving the Best Run and its Model*
+
 You can easily identify the best run in Azure Machine Learning studio, and download or deploy the model it generated. To accomplish this with the SDK, you can use code like the following example:
 ```python
 best_run, fitted_model = automl_run.get_output()
@@ -1382,6 +1429,7 @@ for metric_name in best_run_metrics:
 ``` 
 
 *Exploring Preprocessing Steps*
+
 Automated machine learning uses scikit-learn pipelines to encapsulate preprocessing steps with the model. You can view the steps in the fitted model you obtained from the best run using the code above like this:
 ```python
 for step_ in fitted_model.named_steps:
@@ -1408,7 +1456,8 @@ param_sampling = GridParameterSampling(param_space)
 *Random Sampling*
 Random sampling is used to randomly select a value for each hyperparameter, which can be a mix of discrete and continuous values:
 ```python
-from azureml.train.hyperdrive import RandomParameterSampling, choice, normal
+from azureml.train.hyperdrive import RandomParameterSampling
+from azureml.train.hyperdrive import choice, normal
 
 param_space = {
                  '--batch_size': choice(16, 32, 64),
@@ -1417,10 +1466,13 @@ param_space = {
 
 param_sampling = RandomParameterSampling(param_space)
 ``` 
+
 *Bayesian Sampling*
+
 Bayesian sampling chooses hyperparameter values based on the Bayesian optimization algorithm, which tries to select parameter combinations that will result in improved performance from the previous selection:
 ```python
-from azureml.train.hyperdrive import BayesianParameterSampling, choice, uniform
+from azureml.train.hyperdrive import BayesianParameterSampling
+from azureml.train.hyperdrive import choice, uniform
 
 param_space = {
                  '--batch_size': choice(16, 32, 64),
@@ -1435,6 +1487,7 @@ param_sampling = BayesianParameterSampling(param_space)
 The set of hyperparameter values tried during hyperparameter tuning is known as the search space. The definition of the range of possible values that can be chosen depends on the type of hyperparameter.
 
 *Discrete Hyperparameters*
+
 Some hyperparameters require discrete values - in other words, you must select the value from a particular set of possibilities. You can define a search space for a discrete parameter using a choice from a list of explicit values, which you can define as a Python list (choice([10,20,30])), a range (choice(range(1,10)])), or an arbitrary set of comma-separated values (choice(30,50,100))
 
 You can also select discrete values from any of the following discrete distributions:
@@ -1516,7 +1569,8 @@ from sklearn.linear_model import LogisticRegression
 
 # Get regularization hyperparameter
 parser = argparse.ArgumentParser()
-parser.add_argument('--regularization', type=float, dest='reg_rate', default=0.01)
+parser.add_argument('--regularization', type=float, 
+                    dest='reg_rate', default=0.01)
 args = parser.parse_args()
 reg = args.reg_rate
 
@@ -1526,13 +1580,14 @@ run = Run.get_context()
 # load the training dataset
 data = run.input_datasets['training_data'].to_pandas_dataframe()
 
-# Separate features and labels, and split for training/validatiom
+# Separate features and labels, and split for training/validation
 X = data[['feature1','feature2','feature3','feature4']].values
 y = data['label'].values
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30)
 
 # Train a logistic regression model with the reg hyperparameter
-model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, y_train)
+model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, 
+                                                            y_train)
 
 # calculate and log accuracy
 y_hat = model.predict(X_test)
@@ -1544,24 +1599,27 @@ os.makedirs('outputs', exist_ok=True)
 joblib.dump(value=model, filename='outputs/model.pkl')
 
 run.complete()
-
+``` 
 Note: Note that in the Scikit-Learn LogisticRegression class, C is the inverse of the regularization rate; hence C=1/reg.
 
-Configuring and Running a Hyperdrive Experiment
-To prepare the Hyperdrive experiment, you must use a HyperDriveConfig object to configure the experiment run, as shown here:
+*Configuring and Running a Hyperdrive Experiment*
 
+To prepare the Hyperdrive experiment, you must use a `HyperDriveConfig` object to configure the experiment run, as shown here:
+```python
 from azureml.core import Experiment
 from azureml.train.hyperdrive import HyperDriveConfig, PrimaryMetricGoal
 
 # Assumes ws, sklearn_estimator and param_sampling are already defined
 
-hyperdrive = HyperDriveConfig(estimator=sklearn_estimator,
-                              hyperparameter_sampling=param_sampling,
-                              policy=None,
-                              primary_metric_name='Accuracy',
-                              primary_metric_goal=PrimaryMetricGoal.MAXIMIZE,
-                              max_total_runs=6,
-                              max_concurrent_runs=4)
+hyperdrive = HyperDriveConfig(
+estimator=sklearn_estimator,
+hyperparameter_sampling=param_sampling,
+policy=None,
+primary_metric_name='Accuracy',
+primary_metric_goal=PrimaryMetricGoal.MAXIMIZE,
+max_total_runs=6,
+max_concurrent_runs=4
+)
 
 experiment = Experiment(workspace = ws, name = 'hyperdrive_training')
 hyperdrive_run = experiment.submit(config=hyperdrive)
@@ -1596,9 +1654,11 @@ More Information: For more information about the Interpret-Community package, se
 Model explainers use statistical techniques to calculate feature importance. This enables you to quantify the relative influence each feature in the training dataset has on label prediction. Explainers work by evaluating a test data set of feature cases and the labels the model predicts for them.
 
 **Global Feature Importance**
+
 Global feature importance quantifies the relative importance of each feature in the test dataset as a whole. It provides a general comparison of the extent to which each feature in the dataset influences prediction.
 
 **Local Feature Importance**
+
 Local feature importance measures the influence of each feature value for a specific individual prediction.
 
 #### 3.3.1 select a model interpreter
@@ -1607,6 +1667,7 @@ You can use the Azure Machine Learning SDK to create explainers for local models
 Note: “Local” in this context refers to models in your local development environment - it does not imply that only local feature importance can be generated - you can view both global and local feature importance for local models.
 
 **Creating an Explainer**
+
 To interpret a local model, you must install the azureml-interpret package and use it to create an explainer. There are multiple types of explainer, including:
 * **MimicExplainer** - An explainer that creates a global surrogate model that approximates your trained model and can be used to generate explanations. This explainable model must have the same kind of architecture as your trained model (for example, linear or tree-based).
 * **TabularExplainer** - An explainer that acts as a wrapper around various SHAP explainer algorithms, automatically choosing the one that is most appropriate for your model architecture.
@@ -1618,46 +1679,56 @@ The following code sample shows how to create an instance of each of these expla
 from interpret.ext.blackbox import MimicExplainer
 from interpret.ext.glassbox import DecisionTreeExplainableModel
 
-mim_explainer = MimicExplainer(model=loan_model,
-                             initialization_examples=X_test,
-                             explainable_model = DecisionTreeExplainableModel,
-                             features=['loan_amount','income','age','marital_status'],
-                             classes=['reject', 'approve'])
+mim_explainer = MimicExplainer(
+model=loan_model,
+initialization_examples=X_test,
+explainable_model = DecisionTreeExplainableModel,
+features=['loan_amount','income', 'age','marital_status'],
+classes=['reject', 'approve']
+)
 
 
 # TabularExplainer
 from interpret.ext.blackbox import TabularExplainer
 
-tab_explainer = TabularExplainer(model=loan_model,
-                             initialization_examples=X_test,
-                             features=['loan_amount','income','age','marital_status'],
-                             classes=['reject', 'approve'])
+tab_explainer = TabularExplainer(
+model=loan_model,
+initialization_examples=X_test,
+features=['loan_amount','income','age','marital_status'],
+classes=['reject', 'approve']
+)
 
 
 # PFIExplainer
 from interpret.ext.blackbox import PFIExplainer
 
-pfi_explainer = PFIExplainer(model = loan_model,
-                             features=['loan_amount','income','age','marital_status'],
-                             classes=['reject', 'approve'])
+pfi_explainer = PFIExplainer(
+model = loan_model,
+features=['loan_amount','income', age','marital_status'],
+classes=['reject', 'approve']
+)
 ``` 
 
 **Explaining Global Feature Importance**
+
 To retrieve global importance values for the features in your mode, you call the explain_global() method of your explainer to get a global explanation, and then use the get_feature_importance_dict() method to get a dictionary of the feature importance values:
 ```python
 # MimicExplainer
 global_mim_explanation = mim_explainer.explain_global(X_train)
-global_mim_feature_importance = global_mim_explanation.get_feature_importance_dict()
+global_mim_feature_importance = \
+global_mim_explanation.get_feature_importance_dict()
 
 
 # TabularExplainer
 global_tab_explanation = tab_explainer.explain_global(X_train)
-global_tab_feature_importance = global_tab_explanation.get_feature_importance_dict()
+global_tab_feature_importance = \
+global_tab_explanation.get_feature_importance_dict()
 
 
 # PFIExplainer
 global_pfi_explanation = pfi_explainer.explain_global(X_train, y_train)
-global_pfi_feature_importance = global_pfi_explanation.get_feature_importance_dict()
+global_pfi_feature_importance = \
+global_pfi_explanation.get_feature_importance_dict()
 ``` 
 Note: The code is the same for MimicExplainer and TabularExplainer. The PFIExplainer requires the actual labels that correspond to the test features.
 
@@ -1679,9 +1750,11 @@ local_tab_importance = local_tab_explanation.get_ranked_local_values()
 **> Note:** The code is the same for MimicExplainer and TabularExplainer. The PFIExplainer doesn't support local feature importance explanations.
 
 **Adding Interpretability to Training Experiments**
+
 When you use an estimator or a script to train a model in an Azure Machine Learning experiment, you can create an explainer and upload the explanation it generates to the run output for later analysis.
 
 *Creating an Explanation in the Experiment Script*
+
 To create an explanation in the experiment script, you'll need to ensure that the azureml-interpret and azureml-contrib-interpret packages are installed in the run environment. Then you can use these to create an explanation from your trained model and upload it to the run outputs.
 ```python
 # Import Azure ML run library
@@ -1696,17 +1769,20 @@ run = Run.get_context()
 # code to train model goes here
 
 # Get explanation
-explainer = TabularExplainer(model, X_train, features=features, classes=labels)
+explainer = TabularExplainer(model, X_train, 
+                             features=features, classes=labels)
 explanation = explainer.explain_global(X_test)
 
 # Get an Explanation Client and upload the explanation
 explain_client = ExplanationClient.from_run(run)
-explain_client.upload_model_explanation(explanation, comment='Tabular Explanation')
+explain_client.upload_model_explanation(explanation, 
+                                        comment='Tabular Explanation')
 
 # Complete the run
 run.complete()
 ``` 
 *Viewing the Explanation*
+
 You can view the explanation you created for your model in the Explanations tab for the run in Azure Machine learning studio.
 You can also use the ExplanationClient object to download the explanation in Python.
 ```python
@@ -1720,6 +1796,7 @@ feature_importances = explanation.get_feature_importance_dict()
 ``` 
 
 **Interpretability During Inferencing**
+
 In some scenarios, you might want to generate explanations along with predictions from a published model.
 The first step in this process is to create a scoring explainer as a wrapper for your model explainer, and register it in the same workspace as your model.
 ```python
