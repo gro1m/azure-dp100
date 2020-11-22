@@ -51,10 +51,10 @@ Use the Azure Command Line Interface (CLI) with the Azure Machine Learning CLI e
     az ml workspace create -w 'aml-workspace' -g 'aml-resources'
 ```
 
-Create an Azure Resource Manager template, see the[Azure Machine Learning documentation](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-create-workspace-template?tabs=azcli).
+Create an Azure Resource Manager template, see [ARM documentation](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-create-workspace-template?tabs=azcli).
 
 **NOTE**
-*Basic* edition as opposed to *Enterprise* edition of the workspace have lower cost, but do not include capabilities like AutoML, the Visual Designer, and data drift monitoring. For the details, see: https://azure.microsoft.com/en-us/pricing/details/machine-learning/.
+*Basic* edition as opposed to *Enterprise* edition of the workspace have lower cost, but do not include capabilities like AutoML, the Visual Designer, and data drift monitoring. See also https://azure.microsoft.com/en-us/pricing/details/machine-learning/.
 
 #### 1.1.2 configure workspace settings
 fter installing the SDK package in your Python environment, you can write code to connect to your workspace and perform machine learning operations. The easiest way to connect to a workspace is to use a workspace configuration file, which includes the Azure subscription, resource group, and workspace details as shown here:
@@ -77,7 +77,7 @@ from azureml.core import Workspace
 ws = Workspace.from_config()
 ```
 
-By default, the from_config method looks for a file named config.json in the folder containing the Python code file, but you can specify another path if necessary.
+By default, the `from_config` method looks for a file named `config.json` in the folder containing the Python code file, but you can specify another path if necessary.
 
 As an alternative to using a configuration file, you can use the get method of the Workspace class with explicitly specified subscription, resource group, and workspace details as shown here - though the configuration file technique is generally preferred due to its greater flexibility when using multiple scripts:
 
@@ -110,7 +110,8 @@ To use Azure Machine Learning studio, use a a web browser to navigate to https:/
 In Azure Machine Learning, datastores are abstractions for cloud data sources. They encapsulate the information required to connect to data sources, and can be used to ingest data into an experiment or to write outputs from an experiment.
 
 **Types of Datastore**
-Azure Machine Learning supports the creation of datastores for multiple kinds of Azure data source, including:
+
+Azure Machine Learning supports the following types of datastores (non-exhaustive):
 * Azure Storage (blob and file containers)
 * Azure Data Lake stores
 * Azure SQL Database
@@ -119,16 +120,19 @@ Azure Machine Learning supports the creation of datastores for multiple kinds of
 *> Note:* For a full list of supported datastores, see https://docs.microsoft.com/en-us/azure/machine-learning/concept-data#access-data-in-storage.
 
 **Using Datastores**
+
 You can access datastores directly in code by using the Azure Machine Learning SDK, and use it to upload or download data. You can also mount a datastore in an experiment in order to read or write data.
 
 The ability to define a datastore enables you to reuse data across multiple experiments, regardless of the compute context in which the experiment is running.
 
 **Adding Datastores to a Workspace**
+
 Every workspace has two built-in datastores (an Azure Storage blob container, and an Azure Storage file container) that are used as system storage by Azure Machine Learning. You can also store a limited amount of your own data in these built-in datastores for experiments, model training, and so on.
 
 However, in most machine learning projects, you will likely need to work with data sources of your own - either because you need to store larger volumes of data than the built-in datastores support, or because you need to integrate your machine learning solution with data from existing applications.
 
 *Registering a Datastore*
+
 To add a datastore to your workspace, you can register it using the graphical interface in Azure Machine Learning Studio, or you can use the Azure Machine Learning SDK. For example, the following code registers an Azure Storage blob container as a datastore named blob_data.
 ```python
 from azureml.core import Workspace, Datastore
@@ -143,6 +147,7 @@ account_key='123456abcde789…')
  ``` 
 
 *Managing Datastores*
+
 You can view and manage datastores in Azure Machine Learning Studio, or you can use the Azure Machine Learning SDK. For example, the following code lists the names of each datastore in the workspace.
 ```python
 for ds_name in ws.datastores:
@@ -162,9 +167,11 @@ ws.set_default_datastore('blob_data')
 ``` 
 
 **Using Azure Blob and File Datastores**
+
 Azure blob and file datastores are the most commonly used. You can use the Azure Machine Learning SDK to work directly with these datastores, and to pass data references to scripts that need to access data.
 
 *Working Directly with a Datastore*
+
 You can work directly with a datastore to upload and download data by using the methods of the datastore class, like this:
 ```python
 blob_ds.upload(src_dir='/files',
@@ -177,6 +184,7 @@ blob_ds.download(target_path='downloads',
 ``` 
 
 *Using Data References*
+
 When you want to use a datastore in an experiment script, you must pass a data reference to the script. The data reference is configured for one of the following data access modes:
 * **Download**: The contents of the path associated with the data reference is downloaded to the compute context where the experiment is running.
 * **Upload**: The files generated by your experiment script are uploaded to the datastore after the run completes.
@@ -184,7 +192,9 @@ When you want to use a datastore in an experiment script, you must pass a data r
 
 To pass the data reference to an experiment script, you must define a script parameter as shown here:
 ```python
-data_ref = blob_ds.path('data/files').as_download(path_on_compute='training_data')
+data_ref = blob_ds.path('data/files').as_download(
+path_on_compute='training_data'
+)
 estimator = SKLearn(source_directory='experiment_folder',
                     entry_script='training_script.py'
                     compute_target='local',
@@ -228,6 +238,7 @@ data_files = os.listdir(args.data_folder)
 Datasets are versioned packaged data objects that can be easily consumed in experiments and pipelines. Datasets are the recommended way to work with data, and are the primary mechanism for advanced Azure Machine Learning capabilities like data labeling and data drift monitoring.
 
 **Types of Dataset**
+
 Datasets are typically based on files in a datastore, though they can also be based on URLs and other sources. You can create the following types of dataset:
 
 * Tabular: The data is read from the dataset as a table. You should use this type of dataset when your data is consistently structured and you want to work with it in common tabular data structures, such as Pandas dataframes.
@@ -241,6 +252,7 @@ You can create a dataset and work with it immediately, and you can then register
 You can create datasets by using the visual interface in Azure Machine Learning studio, or you can use the Azure Machine Learning SDK.
 
 **Creating and Registering Tabular Datasets**
+
 To create a tabular dataset using the SDK, use the from_delimited_files method of the Dataset.Tabular class, like this:
 ```python
 from azureml.core import Dataset
@@ -259,6 +271,7 @@ The dataset in this example includes data from two file paths within the default
 After creating the dataset, the code registers it in the workspace with the name *csv_table*.
 
 **Creating and Registering File Datasets**
+
 To create a file dataset using the SDK, use the from_files method of the Dataset.File class, like this:
 ```python
 from azureml.core import Dataset
@@ -321,6 +334,7 @@ for file_path in ds2.to_path():
 The most common ways to create or attach a compute target are to use the Compute page in Azure Machine Learning studio, or to use the Azure Machine Learning SDK to provision compute targets in code. Additionally, you can create compute targets using the Azure Machine Learning extension in Visual Studio Code, or by using the Azure command line interface (CLI) extension for Azure Machine Learning.
 
 **Creating a Managed Compute Target with the SDK**
+
 A managed compute target is one that is managed by Azure Machine Learning, such as an Azure Machine Learning training cluster.
 
 To create an Azure Machine Learning compute cluster compute target, use the azureml.core.compute.ComputeTarget class and the AmlCompute class, like this:
@@ -336,7 +350,8 @@ compute_name = 'aml-cluster'
 
 # Define compute configuration
 compute_config = AmlCompute.provisioning_configuration(
-vm_size='STANDARD_DS12_V2', min_nodes=0, max_nodes=4, vm_priority='dedicated'
+vm_size='STANDARD_DS12_V2', min_nodes=0, max_nodes=4, 
+vm_priority='dedicated'
 )
 
 # Create the compute
@@ -349,9 +364,10 @@ In this example, a cluster with up to four nodes based on the STANDARD_DS12_v2 v
 Note: For a full list of AmlCompute configuration options, see the AmlCompute class SDK documentation.
 
 **Attaching an Unmanaged Compute Target with the SDK**
+
 An unmanaged compute target is one that is defined and managed outside of the Azure Machine Learning workspace; for example, an Azure virtual machine or an Azure Databricks cluster.
 
-The code to attach an existing unmanaged compute target is similar to the code used to create a managed compute target, except that you must use the *ComputeTarget.attach()* method to attach the existing compute based on its target-specific configuration settings.
+The code to attach an existing unmanaged compute target is similar to the code used to create a managed compute target, except that you must use the `ComputeTarget.attach()` method to attach the existing compute based on its target-specific configuration settings.
 
 For example, the following code can be used to attach an existing Azure Databricks cluster:
 ```python
@@ -378,6 +394,7 @@ databricks_compute = ComputeTarget.attach(ws, compute_name, db_config)
 databricks_compute.wait_for_completion(True)
 ``` 
 *Checking for an Existing Compute Target*
+
 In many cases, you will want to check for the existence of a compute target, and only create a new one if there isn't already one with the specified name. To accomplish this, you can catch the ComputeTargetException exception, like this:
 ```python
 from azureml.core.compute import ComputeTarget, AmlCompute
@@ -391,8 +408,8 @@ try:
     print('Found existing cluster.')
 except ComputeTargetException:
     # If not, create it
-    compute_config = AmlCompute.provisioning_configuration(vm_size='STANDARD_DS12_V2',
-                                                           max_nodes=4)
+    compute_config = AmlCompute.provisioning_configuration(
+    vm_size='STANDARD_DS12_V2', max_nodes=4)
     aml_cluster = ComputeTarget.create(ws, compute_name, compute_config)
 
 aml_cluster.wait_for_completion(show_output=True)
@@ -404,7 +421,7 @@ More Information: For more information about creating compute targets, see Set u
 
 After you've created or attached compute targets in your workspace, you can use them to run specific workloads; such as experiments.
 
-To use a particular compute target, you can specify it in the appropriate parameter for an experiment run configuration or estimator. For example, the following code configures an estimator to use the compute target named aml-cluster:
+To use a particular compute target, you can specify it in the appropriate parameter for an experiment run configuration or estimator. For example, the following code configures an estimator to use the compute target named `aml-cluster`:
 ```python
 from azureml.core import Environment
 from azureml.train.estimator import Estimator
@@ -573,7 +590,7 @@ from azureml.widgets import RunDetails
 
 # Create a script config
 script_config = ScriptRunConfig(source_directory=experiment_folder, 
-                      script='diabetes_experiment.py') 
+                                script='diabetes_experiment.py') 
 
 # submit the experiment
 experiment = Experiment(workspace=ws, name='diabetes-experiment')
@@ -624,8 +641,8 @@ default_ds = ws.get_default_datastore()
 print(default_ds.name)
 
 # Upload Data to a Datastore
-default_ds.upload_files(
-files=['./data/diabetes.csv', './data/diabetes2.csv'], # Upload the diabetes csv files in /data
+default_ds.upload_files( # Upload the diabetes csv files in /data
+files=['./data/diabetes.csv', './data/diabetes2.csv'], 
 target_path='diabetes-data/', # Put it in a folder path in the datastore
 overwrite=True, # Replace existing files of the same name
 show_progress=True)                     
@@ -681,6 +698,7 @@ When a file dataset is passed to the estimator, a mount point from which the scr
 Datasets can be versioned, enabling you to track historical versions of datasets that were used in experiments, and reproduce those experiments with data in the same state.
 
 *Creating a New Version of a Dataset*
+
 You can create a new version of a dataset by registering it with the same name as a previously registered dataset and specifying the create_new_version property:
 ```python 
 img_paths = [(blob_ds, 'data/files/images/*.jpg'),
@@ -695,6 +713,7 @@ create_new_version=True
 In this example, the .png files in the images folder have been added to the definition of the `img_paths` dataset example used in the previous topic.
 
 *Retrieving a Specific Dataset version*
+
 You can retrieve a specific version of a dataset by specifying the version parameter in the `get_by_name` method of the Dataset class.
 ```python 
 img_ds = Dataset.get_by_name(workspace=ws, name='img_files', version=2)
@@ -723,8 +742,8 @@ diabetes = pd.read_csv('diabetes.csv')
 
 # Separate features and labels
 X, y = diabetes[['Pregnancies','PlasmaGlucose','DiastolicBloodPressure',
-'TricepsThickness','SerumInsulin','BMI',
-'DiabetesPedigree','Age']].values, diabetes['Diabetic'].values
+                 'TricepsThickness','SerumInsulin','BMI', 'DiabetesPedigree',
+                 'Age']].values, diabetes['Diabetic'].values
 
 # Split data into training set and test set
 X_train, X_test, y_train, y_test = train_test_split(X, y, 
@@ -966,8 +985,8 @@ If you have an existing Conda environment defined on your workstation, you can u
 ```python
 from azureml.core import Environment
 
-env = Environment.from_existing_conda_environment(name='training_environment',
-                                                  conda_environment_name='py_env')
+env = Environment.from_existing_conda_environment(
+name='training_environment', conda_environment_name='py_env')
 ``` 
 
 **Creating an Environment by Specifying Packages**
@@ -979,10 +998,12 @@ from azureml.core.conda_dependencies import CondaDependencies
 
 env = Environment('training_environment')
 
-env.python.user_managed_dependencies = False # Let Azure ML manage dependencies, for custom docker images this has to be set to True
+# Let Azure ML manage dependencies, for custom docker images: use True
+env.python.user_managed_dependencies = False 
 env.docker.enabled = True # Use a docker container
 
-deps = CondaDependencies.create(conda_packages=['scikit-learn','pandas','numpy'],
+deps = CondaDependencies.create(conda_packages=['scikit-learn','pandas',
+                                               'numpy'],
                                 pip_packages=['azureml-defaults'])
 env.python.conda_dependencies = deps
 ``` 
@@ -1023,6 +1044,7 @@ estimator = Estimator(source_directory='experiment_folder'
 When an experiment based on the estimator is run, Azure Machine Learning will look for an existing environment that matches the definition, and if none is found a new environment will be created based on the registered environment specification. In the *azureml_logs/60_control_log.txt* you will see the conda environment being built.
 
 **Curated Environments**
+
 Azure Machine Learning includes a selection of pre-defined curated environments that reflect common usage scenarios. These include environments that are pre-configured with package dependencies for common frameworks, such as Scikit-Learn, PyTorch, Tensorflow, and others.
 
 Curated environments are registered in all Azure Machine Learning workspaces with a name that begins AzureML-.
@@ -1030,6 +1052,7 @@ Curated environments are registered in all Azure Machine Learning workspaces wit
 **> Note: You can't register your own environments with an “AzureML-” prefix. **
 
 *Viewing Curated Environments*
+
 To view curated environments and the dependencies they contain, you can run the following code:
 ```python
 from azureml.core import Environment
@@ -1038,7 +1061,8 @@ envs = Environment.list(workspace=ws)
 for env in envs:
     if env.startswith("AzureML"):
         print("Name",env)
-        print("packages", envs[env].python.conda_dependencies.serialize_to_string())
+        print("packages", 
+              envs[env].python.conda_dependencies.serialize_to_string())
 ``` 
 
 ### 2.4 Automate the model training process
@@ -1077,6 +1101,7 @@ Common kinds of step in an Azure Machine Learning pipeline include:
 **Note:** For a full list of supported step types, see azure.pipeline.steps package documentation.
 
 *Defining Steps in a Pipeline*
+
 To create a pipeline, you must first define each step and then create a pipeline that includes the steps. The specific configuration of each step depends on the step type. For example the following code defines a PythonScriptStep step that runs a script, and an EstimatorStep step that runs an estimator.
 ```python
 from azureml.pipeline.steps import PythonScriptStep, EstimatorStep
@@ -1113,7 +1138,7 @@ To use a PipelineData object to pass data between steps, you must:
 * Specify the PipelineData object as an input or output for the steps that use it.
 * Pass the PipelineData object as a script argument in steps that run scripts (and include code in those scripts to read or write data)
 
-For example, the following code defines a PipelineData object that for the preprocessed data that must be passed between the steps.
+For example, the following code defines a `PipelineData` object that for the preprocessed data that must be passed between the steps.
 ```python
 from azureml.pipeline.core import PipelineData
 from azureml.pipeline.steps import PythonScriptStep, EstimatorStep
@@ -1378,33 +1403,33 @@ Azure Machine Learning includes support for numerous commonly used algorithms fo
 * Classification Algorithms
     * Logistic Regression
     * Light Gradient Boosting Machine (GBM)
-    ** Decision Tree
-    ** Random Forest
-    ** Naive Bayes
-    ** Linear Support Vector Machine (SVM)
-    ** XGBoost
-    ** Deep Neural Network (DNN) Classifier
-    ** Others…
+    * Decision Tree
+    * Random Forest
+    * Naive Bayes
+    * Linear Support Vector Machine (SVM)
+    * XGBoost
+    * Deep Neural Network (DNN) Classifier
+    * Others…
 
 * Regression Algorithms
-    ** Linear Regression
-    ** Light Gradient Boosting Machine (GBM)
-    ** Decision Tree
-    ** Random Forest
-    ** Elastic Net
-    ** LARS Lasso
-    ** XGBoost
-    ** Others…
+    * Linear Regression
+    * Light Gradient Boosting Machine (GBM)
+    * Decision Tree
+    * Random Forest
+    * Elastic Net
+    * LARS Lasso
+    * XGBoost
+    * Others…
 
 * Forecasting Algorithms
-    ** Linear Regression
-    ** Light Gradient Boosting Machine (GBM)
-    ** Decision Tree
-    ** Random Forest
-    ** Elastic Net
-    ** LARS Lasso
-    ** XGBoost
-    ** Others…
+    * Linear Regression
+    * Light Gradient Boosting Machine (GBM)
+    * Decision Tree
+    * Random Forest
+    * Elastic Net
+    * LARS Lasso
+    * XGBoost
+    * Others…
 
 More Information: For a full list of supported algorithms, see https://docs.microsoft.com/en-us/azure/machine-learning/concept-automated-ml.
 
@@ -1440,6 +1465,7 @@ for step_ in fitted_model.named_steps:
 The specific values used in a hyperparameter tuning run depend on the type of sampling used.
 
 *Grid Sampling*
+
 Grid sampling can only be employed when all hyperparameters are discrete, and is used to try every possible combination of parameters in the search space.
 
 For example, in the following code, grid sampling is used to try every possible combination of discrete batch_size and learning_rate value:
@@ -1497,6 +1523,7 @@ You can also select discrete values from any of the following discrete distribut
 * qloguniform
 
 *Continuous Hyperparameters*
+
 Some hyperparameters are continuous - in other words you can use any value along a scale. To define a search space for these kinds of value, you can use any of the following distribution types:
 * normal
 * uniform
@@ -1504,6 +1531,7 @@ Some hyperparameters are continuous - in other words you can use any value along
 * loguniform
 
 *Defining a Search Space*
+
 To define a search space for hyperparameter tuning, create a dictionary with the appropriate parameter expression for each named hyperparameter. For example, the following search space indicates that the batch_size hyperparameter can have the value 20, 50, or 100; and the learning_rate hyperparameter can have any value from a normal distribution with a mean of 10 and a standard deviation of 3.
 ```python
 from azureml.train.hyperdrive import choice, normal
@@ -1522,6 +1550,7 @@ To help prevent wasting time, you can set an early termination policy that aband
 **> Note:** Early termination is particularly useful for deep learning scenarios where a deep neural network (DNN) is trained iteratively over a number of epochs. The training script can report the target metric after each epoch, and if the run is significantly underperforming previous runs after the same number of intervals, it can be abandoned.
 
 **Bandit Policy**
+
 You can use a bandit policy to stop a run if the target performance metric underperforms the best run so far by a specified margin.
 ```python
 from azureml.train.hyperdrive import BanditPolicy
@@ -1536,6 +1565,7 @@ This example applies the policy for every iteration after the first five, and ab
 *Note:* You can also apply a bandit policy using a slack factor, which compares the performance metric as a ratio rather than an absolute value.
 
 **Median Stopping Policy**
+
 A median stopping policy abandons runs where the target performance metric is worse than the median of the running averages for all runs.
 ```python
 from azureml.train.hyperdrive import MedianStoppingPolicy
@@ -1544,12 +1574,12 @@ early_termination_policy = MedianStoppingPolicy(evaluation_interval=1,
                                                 delay_evaluation=5)
 ``` 
 **Truncation Selection Policy**
+
 A truncation selection policy cancels the lowest performing X% of runs at each evaluation interval based on the truncation_percentage value you specify for X.
 ```python
 from azureml.train.hyperdrive import TruncationSelectionPolicy
-early_termination_policy = TruncationSelectionPolicy(truncation_percentage=10,
-                                                     evaluation_interval=1,
-                                                     delay_evaluation=5)
+early_termination_policy = TruncationSelectionPolicy(
+truncation_percentage=10, evaluation_interval=1, delay_evaluation=5)
 ``` 
 #### 3.2.5 find the model that has optimal hyperparameter values
 In Azure Machine Learning, you can tune hyperparameters by running a Hyperdrive experiment.
@@ -1759,7 +1789,8 @@ To create an explanation in the experiment script, you'll need to ensure that th
 ```python
 # Import Azure ML run library
 from azureml.core.run import Run
-from azureml.contrib.interpret.explanation.explanation_client import ExplanationClient
+from azureml.contrib.interpret.explanation.explanation_client import \
+ExplanationClient
 from interpret.ext.blackbox import TabularExplainer
 # other imports as required
 
@@ -1786,7 +1817,8 @@ run.complete()
 You can view the explanation you created for your model in the Explanations tab for the run in Azure Machine learning studio.
 You can also use the ExplanationClient object to download the explanation in Python.
 ```python
-from azureml.contrib.interpret.explanation.explanation_client import ExplanationClient
+from azureml.contrib.interpret.explanation.explanation_client import \
+ExplanationClient
 
 client = ExplanationClient.from_run_id(
 workspace=ws,
@@ -2282,10 +2314,9 @@ After creating the entry script and environment configuration file, you can comb
 ```python
 from azureml.core.model import InferenceConfig
 
-classifier_inference_config = InferenceConfig(runtime= "python",
-                                              source_directory = 'service_files',
-                                              entry_script="score.py",
-                                              conda_file="env.yml")
+classifier_inference_config = InferenceConfig(
+runtime= "python", source_directory = 'service_files',
+entry_script="score.py", conda_file="env.yml")
 ``` 
 
 *3. Define a Deployment Configuration*
@@ -2296,7 +2327,7 @@ from azureml.core.compute import ComputeTarget, AksCompute
 
 cluster_name = 'aks-cluster'
 compute_config = AksCompute.provisioning_configuration(location='eastus')
-production_cluster = ComputeTarget.create(ws, cluster_name, compute_config)
+production_cluster = ComputeTarget.create(ws,cluster_name,compute_config)
 production_cluster.wait_for_completion(show_output=True)
 ``` 
 
@@ -2362,7 +2393,7 @@ for i in range(len(x_new)):
     print (x_new[i]), predictions[i] )
 ``` 
 
-Using a REST Endpoint
+*Using a REST Endpoint*
 In production, most client applications will not include the Azure Machine Learning SDK, and will consume the service through its REST interface. You can determine the endpoint of a deployed service in Azure machine Learning studio, or by retrieving the scoring_uri property of the Webservice object in the SDK, like this:
 ```python
 endpoint = service.scoring_uri
@@ -2429,7 +2460,8 @@ Deployment and runtime errors can be easier to diagnose by deploying the service
 from azureml.core.webservice import LocalWebservice
 
 deployment_config = LocalWebservice.deploy_configuration(port=8890)
-service = Model.deploy(ws, 'test-svc', [model], inference_config, deployment_config)
+service = Model.deploy(ws, 'test-svc', [model], 
+                       inference_config, deployment_config)
 ``` 
 You can then test the locally deployed service using the SDK:
 ```python
@@ -2490,14 +2522,13 @@ from azureml.core import Model
 classification_model = Model.register(workspace=ws,
                                       model_name='classification_model',
                                       model_path='model.pkl', # local path
-                                      description='A classification model')
+                                      description='A classifier model')
 ``` 
 Alternatively, if you have a reference to the *Run* used to train the model, you can use its register_model method as shown here:
 ```python
 run.register_model(model_name='classification_model',
                    model_path='outputs/model.pkl', # run outputs path
-                   description='A classification model'
-                   )
+                   description='A classifier model')
 ``` 
 
 2. Create an Scoring Script
@@ -2635,14 +2666,17 @@ Consider adding parameters, which can be passed by calling applications to add f
 After creating and modifying an inference pipeline, you can publish an endpoint through which client applications can consume it as a web service.
 
 *Deploying a Real-Time Inference Pipeline*
+
 For real-time inferencing, you must deploy the pipeline as a service on an Azure Kubernetes Services (AKS) compute target. The deployed pipeline service can then be accessed through an HTTP REST endpoint.
 
 *Publishing a Batch Inference Pipeline*
+
 If you have created a batch inference pipeline, you can publish an HTTP endpoint through which the pipeline can be initiated. It will run on the Azure Machine Learning training compute target you have selected for the inference pipeline.
 
 Note: It's important to note that batch inference pipelines are run on training compute, even when published as consumable services.
 
 *Consume service endpoint*
+
 To consume a published service for an inference pipeline, a client application makes a REST request to its HTTP endpoint.
 
 You can view published services in the Endpoints page in Azure Machine Learning studio. Real-time inference endpoints are listed separately from batch pipeline endpoints, but both include starter code you can use to call the endpoint from a client application.
