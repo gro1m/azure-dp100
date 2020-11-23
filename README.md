@@ -1,6 +1,7 @@
 # Summary for Azure DP100 Exam
 
 Resources: 
+- https://github.com/MicrosoftLearning/DP100
 - https://github.com/MicrosoftLearning/DP100/tree/master/labdocs
 - https://docs.microsoft.com/en-us/learn/certifications/exams/dp-100
 - https://www.itexams.com/exam/DP-100
